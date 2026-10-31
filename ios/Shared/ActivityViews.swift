@@ -6,9 +6,11 @@ private let viaYellow = Color(red: 1, green: 0.8, blue: 0)
 struct ActivitySummary: View {
   var state: TrackerCore.ActivityState
   var stale: Bool
+  var testMode = false
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       HStack {
+        if testMode { Text("测试").font(.caption2.bold()).foregroundStyle(.orange) }
         Label("VIA \(state.trainNumber)", systemImage: state.phase.symbol).font(.caption.bold())
         Spacer()
         Text(stale ? "数据较旧" : state.phase.title).font(.caption).foregroundStyle(.secondary)
@@ -20,7 +22,7 @@ struct ActivitySummary: View {
           if state.phase == .completed {
             Text("已到达").font(.title2)
           } else if state.waitingForUpdate || state.targetDate <= Date() {
-            Text("等待更新").font(.title2)
+            Text(state.elapsedTitle).font(.title2)
           } else {
             Text(timerInterval: Date()...state.targetDate, countsDown: true).font(
               .title.monospacedDigit()
@@ -46,6 +48,7 @@ struct ActivitySummary: View {
 struct JourneyEntry: TimelineEntry {
   var date: Date
   var journey: Journey?
+  var testMode = false
 }
 struct JourneyWidgetView: View {
   var entry: JourneyEntry
@@ -57,6 +60,7 @@ struct JourneyWidgetView: View {
       if let j = entry.journey, let state = Projection.state(j, now: entry.date) {
         VStack(alignment: .leading, spacing: 8) {
           HStack {
+            if entry.testMode { Text("测试").font(.caption2.bold()).foregroundStyle(.orange) }
             Label("VIA \(state.trainNumber)", systemImage: state.phase.symbol).font(.caption.bold())
             Spacer()
             if state.validUntilEpoch < entry.date.timeIntervalSince1970 {
@@ -70,7 +74,7 @@ struct JourneyWidgetView: View {
               if state.phase == .completed {
                 Text("已到达").font(.title2)
               } else if state.waitingForUpdate {
-                Text("等待更新").font(.title2)
+                Text(state.elapsedTitle).font(.title2)
               } else {
                 Text(
                   timerInterval: entry.date...max(entry.date, state.targetDate), countsDown: true
@@ -95,7 +99,7 @@ struct JourneyWidgetView: View {
         VStack(alignment: .leading, spacing: 10) {
           Label("VIA Tracker", systemImage: "tram.fill").font(.headline)
           Text("添加行程后，在这里查看乘车时间。").font(.caption).foregroundStyle(.secondary)
-        }.widgetURL(URL(string: "viatracker://journey/current"))
+        }.widgetURL(URL(string: "viatracker://journeys"))
       }
     }
   }

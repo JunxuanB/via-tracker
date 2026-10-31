@@ -1,56 +1,60 @@
 import SwiftUI
 import TrackerCore
 
+// Tokens from design/source/style.css. Keep fill yellow separate from readable accent text.
 enum VIATheme {
+  private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
+    Color(
+      uiColor: UIColor { traits in
+        let hex = traits.userInterfaceStyle == .dark ? dark : light
+        return UIColor(
+          red: CGFloat((hex >> 16) & 255) / 255,
+          green: CGFloat((hex >> 8) & 255) / 255,
+          blue: CGFloat(hex & 255) / 255, alpha: 1)
+      })
+  }
   static let yellow = Color(red: 1, green: 0.8, blue: 0)
-  static let ink = Color(
-    uiColor: UIColor { traits in
-      traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.95, green: 0.95, blue: 0.91, alpha: 1)
-        : UIColor(red: 0.145, green: 0.149, blue: 0.133, alpha: 1)
-    })
-  static let background = Color(
-    uiColor: UIColor { traits in
-      traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.098, green: 0.098, blue: 0.09, alpha: 1)
-        : UIColor(red: 0.965, green: 0.961, blue: 0.941, alpha: 1)
-    })
-  static let surface = Color(
-    uiColor: UIColor { traits in
-      traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.149, green: 0.149, blue: 0.133, alpha: 1)
-        : UIColor(red: 1, green: 0.996, blue: 0.98, alpha: 1)
-    })
-  static let tintSurface = Color(
-    uiColor: UIColor { traits in
-      traits.userInterfaceStyle == .dark
-        ? UIColor(red: 0.25, green: 0.216, blue: 0.11, alpha: 1)
-        : UIColor(red: 1, green: 0.945, blue: 0.72, alpha: 1)
-    })
-  static let accent = Color(
-    uiColor: UIColor { traits in
-      traits.userInterfaceStyle == .dark
-        ? UIColor(red: 1, green: 0.81, blue: 0.25, alpha: 1)
-        : UIColor(red: 0.44, green: 0.337, blue: 0, alpha: 1)
-    })
+  static let ink = adaptive(0x252622, 0xf1f0e8)
+  static let muted = adaptive(0x6e6e63, 0xaaa99d)
+  static let background = adaptive(0xf6f5f0, 0x191917)
+  static let surface = adaptive(0xfffefa, 0x262622)
+  static let tintSurface = adaptive(0xfff1b8, 0x40371c)
+  static let accent = adaptive(0x705600, 0xffcf3f)
+  static let line = adaptive(0xe5e4dc, 0x414138)
+  static let amber = adaptive(0x94601a, 0xecc381)
+  static let amberSurface = adaptive(0xf9edd9, 0x413622)
+  static func date(_ date: Date, zone: String = "America/Toronto", format: String = "M月d日 EEEE")
+    -> String
+  {
+    Time.formatted(date, zone: zone, pattern: format)
+  }
+}
+struct VIADivider: View {
+  var body: some View { Rectangle().fill(VIATheme.line).frame(height: 1).accessibilityHidden(true) }
 }
 struct VIACard<Content: View>: View {
   var tinted = false
+  var padding: CGFloat = 18
+  var spacing: CGFloat = 14
   @ViewBuilder var content: Content
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) { content }.padding(22).frame(
-      maxWidth: .infinity, alignment: .leading
-    ).background(
-      tinted ? VIATheme.tintSurface : VIATheme.surface, in: RoundedRectangle(cornerRadius: 24))
+    VStack(alignment: .leading, spacing: spacing) { content }
+      .padding(padding).frame(maxWidth: .infinity, alignment: .leading)
+      .background(
+        tinted ? VIATheme.tintSurface : VIATheme.surface, in: RoundedRectangle(cornerRadius: 22))
   }
 }
 struct StatusPill: View {
   var title: String
-  var symbol: String = "antenna.radiowaves.left.and.right"
+  var symbol: String = ""
+  var warning = false
   var body: some View {
-    Label(title, systemImage: symbol).font(.caption.weight(.medium)).padding(.horizontal, 11)
-      .padding(.vertical, 7).background(VIATheme.yellow.opacity(0.18), in: Capsule())
-      .foregroundStyle(VIATheme.accent)
+    HStack(spacing: 5) {
+      if !symbol.isEmpty { Image(systemName: symbol).font(.system(size: 11)) }
+      Text(title)
+    }.font(.system(size: 11, weight: .medium)).padding(.horizontal, 9).padding(.vertical, 5)
+      .background(warning ? VIATheme.amberSurface : VIATheme.tintSurface, in: Capsule())
+      .foregroundStyle(warning ? VIATheme.amber : VIATheme.accent)
   }
 }
 struct Notice: View {
@@ -58,22 +62,72 @@ struct Notice: View {
   var symbol: String = "info.circle"
   var body: some View {
     Label {
-      textView
+      Text(text).fixedSize(horizontal: false, vertical: true)
     } icon: {
       Image(systemName: symbol)
-    }.font(.subheadline).foregroundStyle(.secondary).padding(16).frame(
-      maxWidth: .infinity, alignment: .leading
-    ).background(VIATheme.surface, in: RoundedRectangle(cornerRadius: 16))
+    }
+    .font(.system(size: 12)).lineSpacing(4).foregroundStyle(VIATheme.accent)
+    .padding(.vertical, 13).padding(.horizontal, 14).frame(maxWidth: .infinity, alignment: .leading)
+    .background(VIATheme.tintSurface, in: RoundedRectangle(cornerRadius: 14))
   }
-  private var textView: some View { Text(text).fixedSize(horizontal: false, vertical: true) }
 }
 struct PrimaryButtonStyle: ButtonStyle {
+  @Environment(\.isEnabled) private var enabled
   func makeBody(configuration: Configuration) -> some View {
-    configuration.label.font(.headline).frame(maxWidth: .infinity, minHeight: 52).foregroundStyle(
-      Color(red: 0.145, green: 0.149, blue: 0.133)
-    ).background(
-      VIATheme.yellow.opacity(configuration.isPressed ? 0.7 : 1),
-      in: RoundedRectangle(cornerRadius: 16))
+    configuration.label.font(.system(size: 15, weight: .medium))
+      .multilineTextAlignment(.center).padding(.horizontal, 14).padding(.vertical, 12)
+      .frame(maxWidth: .infinity, minHeight: 50)
+      .foregroundStyle(Color(red: 0.145, green: 0.149, blue: 0.133))
+      .background(VIATheme.yellow, in: RoundedRectangle(cornerRadius: 15))
+      .opacity(!enabled ? 0.4 : configuration.isPressed ? 0.7 : 1)
+  }
+}
+struct SecondaryButtonStyle: ButtonStyle {
+  @Environment(\.isEnabled) private var enabled
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label.font(.system(size: 15, weight: .medium))
+      .multilineTextAlignment(.center).padding(.horizontal, 14).padding(.vertical, 12)
+      .frame(maxWidth: .infinity, minHeight: 50).foregroundStyle(VIATheme.accent)
+      .background(
+        VIATheme.tintSurface.opacity(configuration.isPressed ? 0.6 : 1),
+        in: RoundedRectangle(cornerRadius: 15))
+      .opacity(enabled ? 1 : 0.4)
+  }
+}
+struct VIASectionLabel: View {
+  var title: String
+  var detail = ""
+  var body: some View {
+    HStack {
+      Text(title).font(.system(size: 13, weight: .semibold))
+      Spacer()
+      Text(detail).font(.system(size: 11)).foregroundStyle(VIATheme.muted)
+    }
+  }
+}
+struct VIANavigationBar<Trailing: View>: View {
+  var title: String
+  var back = ""
+  var onBack: () -> Void = {}
+  @ViewBuilder var trailing: Trailing
+  var body: some View {
+    ZStack {
+      Text(title).font(.system(size: 16, weight: .semibold)).padding(.horizontal, 90)
+      HStack {
+        if !back.isEmpty {
+          Button(action: onBack) {
+            HStack(spacing: 2) {
+              Image(systemName: "chevron.left")
+              Text(back)
+            }
+            .font(.system(size: 15)).frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
+          }.buttonStyle(.plain).foregroundStyle(VIATheme.accent)
+        }
+        Spacer()
+        trailing.foregroundStyle(VIATheme.accent).frame(minWidth: 44, minHeight: 44)
+      }
+    }.frame(minHeight: 45).padding(.horizontal, 24).background(VIATheme.background)
+      .overlay(alignment: .bottom) { VIADivider() }
   }
 }
 struct CountdownText: View {
@@ -86,7 +140,7 @@ struct CountdownText: View {
       if state.phase == .completed {
         Text("已到达")
       } else if now >= state.targetDate || state.waitingForUpdate {
-        Text("等待更新")
+        Text(state.elapsedTitle)
       } else if frozen || compact {
         Text(Self.duration(Int(state.targetDate.timeIntervalSince(now)), compact: compact))
       } else {
@@ -96,7 +150,7 @@ struct CountdownText: View {
       state.phase == .completed
         ? "行程已完成"
         : now >= state.targetDate
-          ? "预计时刻已过，等待更新"
+          ? state.elapsedTitle
           : "\(state.countdownLabel)，\(max(0,Int(state.targetDate.timeIntervalSince(now)/60))) 分钟")
   }
   private static func duration(_ seconds: Int, compact: Bool) -> String {
@@ -111,57 +165,70 @@ struct JourneyHero: View {
   var journey: Journey
   var now: Date = Date()
   var frozen = false
-  @ScaledMetric(relativeTo: .largeTitle) private var countdownSize: CGFloat = 56
+  @ScaledMetric(relativeTo: .largeTitle) private var countdownSize: CGFloat = 53
   @Environment(\.dynamicTypeSize) private var typeSize
+  @Environment(\.horizontalSizeClass) private var sizeClass
   var body: some View {
-    if let state = Projection.state(journey, now: now), let leg = journey.currentLeg {
-      VIACard(tinted: true) {
-        (typeSize.isAccessibilitySize
-          ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout())) {
-            Label(state.phase.title, systemImage: state.phase.symbol)
-            if !typeSize.isAccessibilitySize { Spacer() }
-            Text("VIA \(state.trainNumber) · 第 \(state.currentLegIndex+1) 段").foregroundStyle(
-              .secondary)
-          }.font(.caption)
-        Text(state.countdownLabel).font(.subheadline).foregroundStyle(VIATheme.accent)
-        CountdownText(state: state, now: now, frozen: frozen, compact: typeSize.isAccessibilitySize)
-          .font(
-            typeSize.isAccessibilitySize
-              ? .largeTitle : .system(size: countdownSize, weight: .regular, design: .rounded)
-          ).fixedSize(horizontal: false, vertical: true).contentTransition(.numericText()).frame(
-            maxWidth: .infinity, alignment: .leading)
-        let event = state.phase == .riding ? leg.alighting?.arrival : leg.boarding?.departure
+    let resolved = Projection.resolvedJourney(journey, now: now)
+    if let state = Projection.state(resolved, now: now), let leg = resolved.currentLeg {
+      VStack(alignment: .leading, spacing: 0) {
         HStack {
-          Text(delayText(event)).foregroundStyle(VIATheme.accent)
+          StatusPill(title: state.phase.title, symbol: state.phase.symbol)
           Spacer()
+          Text("VIA \(state.trainNumber) · 第 \(state.currentLegIndex+1) 段")
+            .font(.system(size: 10)).foregroundStyle(VIATheme.muted)
+        }
+        Text(state.countdownLabel).font(.system(size: 12)).foregroundStyle(VIATheme.accent).padding(
+          .top, sizeClass == .regular ? 14 : 12)
+        CountdownText(state: state, now: now, frozen: frozen, compact: typeSize.isAccessibilitySize)
+          .font(.system(size: sizeClass == .regular ? 61 : countdownSize, weight: .regular))
+          .tracking(-3)
+          .minimumScaleFactor(0.65).lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+          .contentTransition(.numericText()).padding(.top, 7).padding(.bottom, 5)
+        let riding = state.phase == .riding || state.phase == .completed
+        let event = riding ? leg.alighting?.arrival : leg.boarding?.departure
+        let zone = (riding ? leg.alighting?.timeZone : leg.boarding?.timeZone) ?? "America/Toronto"
+        HStack {
           Text(
-            "计划 \(Time.format(event?.scheduledDate,zone:(state.phase == .riding ? leg.alighting?.timeZone : leg.boarding?.timeZone) ?? "America/Toronto"))"
-          ).foregroundStyle(.secondary)
-        }.font(.caption)
+            state.phase == .beforeDeparture
+              ? "前往车站需要 \(journey.travelToStationMinutes) 分钟" : delayText(event)
+          )
+          .foregroundStyle(VIATheme.amber)
+          Spacer()
+          if state.phase != .beforeDeparture {
+            Text("计划 \(Time.format(event?.scheduledDate,zone:zone))").foregroundStyle(
+              VIATheme.muted)
+          }
+        }.font(.system(size: 12))
         if state.phase == .riding {
-          ProgressView(value: state.progress).tint(VIATheme.yellow)
+          GeometryReader { geometry in
+            Capsule().fill(VIATheme.yellow.opacity(0.22))
+            Capsule().fill(VIATheme.yellow).frame(width: geometry.size.width * state.progress)
+          }.frame(height: 4).padding(.top, 12)
           HStack {
             Text(state.origin)
             Spacer()
             Text(state.destination)
-          }.font(.caption).foregroundStyle(.secondary)
+          }
+          .font(.system(size: 11)).foregroundStyle(VIATheme.muted).padding(.top, 9)
         }
-        Divider()
-        if state.phase == .beforeDeparture {
+        VIADivider().padding(.top, 11).padding(.bottom, 10)
+        HStack {
           Text(
-            "\(Time.format(journey.plannedLeaveAt,zone:leg.boarding?.timeZone ?? "America/Toronto")) 出门 · 前往车站 \(journey.travelToStationMinutes) 分钟"
-          ).font(.subheadline)
-        } else {
-          Text(
-            "\(state.phase == .riding ? (state.targetIsEstimate ? "预计到达" : "计划到达") : "发车时刻") \(Time.format(state.targetDate,zone:(state.phase == .riding ? leg.alighting?.timeZone : leg.boarding?.timeZone) ?? "America/Toronto",date:true))"
-          ).font(.subheadline)
-        }
-      }
+            state.phase == .beforeDeparture
+              ? "\(Time.format(journey.plannedLeaveAt,zone:zone)) 出门"
+              : "\(riding ? (state.targetIsEstimate ? "预计" : "计划") : "计划") \(Time.format(state.targetDate,zone:zone)) \(riding ? "到达" : "发车")"
+          )
+          Spacer()
+          Image(systemName: "arrow.up.right")
+        }.font(.system(size: 12))
+      }.padding(.vertical, sizeClass == .regular ? 21 : 17).padding(.horizontal, 19)
+        .background(VIATheme.tintSurface, in: RoundedRectangle(cornerRadius: 24))
     }
   }
   private func delayText(_ event: EventTime?) -> String {
     guard let s = event?.scheduledDate, let e = event?.estimatedDate else {
-      return journey.currentLeg?.source == .reference ? "参考时刻 · 待同步" : "按计划"
+      return journey.currentLeg?.source == .reference ? "参考时刻" : "按计划"
     }
     let minutes = Int(e.timeIntervalSince(s) / 60)
     return minutes > 0 ? "晚点 \(minutes) 分钟" : minutes < 0 ? "预计提前 \(-minutes) 分钟" : "按计划"

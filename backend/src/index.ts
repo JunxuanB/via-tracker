@@ -11,7 +11,17 @@ import { reconcile, type Journey } from "./domain.ts";
 import { sendAPNs } from "./apns.ts";
 import { timingSafeEqual } from "node:crypto";
 
-async function authenticate(request: Request, env: Env): Promise<string> {
+function decodePath(value: string): string {
+  try { return decodeURIComponent(value); }
+  catch { throw new APIError(400, "invalid_path"); }
+}
+
+function searchText(value: string): string {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase().trim()
+    .replace(/quebec city|ville de quebec/g, "quebec");
+}
+
+export async function authenticate(request: Request, env: Env): Promise<string> {
   const authorization = request.headers
     .get("authorization")
     ?.match(/^Bearer ([^:]+):(.+)$/);
@@ -32,7 +42,7 @@ async function authenticate(request: Request, env: Env): Promise<string> {
     throw new APIError(429, "rate_limited");
   return id;
 }
-async function route(request: Request, env: Env): Promise<Response> {
+export async function route(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url),
     path = url.pathname,
     method = request.method;
@@ -74,7 +84,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     }
     throw new APIError(404, "not_found");
   }
-  if (path === "/health") return json({ status: "ok", schemaVersion: 1 });
+  if (path === "/health" && method === "GET") return json({ status: "ok", schemaVersion: 1 });
   if (
     method === "GET" &&
     (path === "/v1/trains" || path.startsWith("/v1/trains/"))
@@ -83,18 +93,18 @@ async function route(request: Request, env: Env): Promise<Response> {
       "SELECT version,fetched_at,status FROM source_state WHERE id=1",
     ).first<SourceState>();
     const snapshots = await allTrains(env);
-    const q = (url.searchParams.get("q") ?? "").toLocaleLowerCase(),
+    const q = searchText(url.searchParams.get("q") ?? ""),
       date = url.searchParams.get("originServiceDate");
     let trains = snapshots.filter(
       (t) =>
         (!date || t.originServiceDate === date) &&
         (!q ||
           t.trainNumber.includes(q) ||
-          t.calls.some((s) => s.name.toLocaleLowerCase().includes(q))),
+          t.calls.some((s) => searchText(`${s.name} ${s.code}`).includes(q))),
     );
     if (path.startsWith("/v1/trains/")) {
       trains = snapshots.filter(
-        (t) => t.id === decodeURIComponent(path.slice("/v1/trains/".length)),
+        (t) => t.id === decodePath(path.slice("/v1/trains/".length)),
       );
       if (!trains.length) throw new APIError(404, "train_not_found");
     }
@@ -105,7 +115,7 @@ async function route(request: Request, env: Env): Promise<Response> {
       schemaVersion: 1,
       snapshotVersion: source?.version ?? 0,
       sourceFetchedAt: source?.fetched_at ?? null,
-      sourceStatus: stale ? "stale" : (source?.status ?? "unavailable"),
+      sourceStatus: !source?.fetched_at ? "unavailable" : stale ? "stale" : source.status,
       availableServiceDates: [
         ...new Set(snapshots.map((t) => t.originServiceDate)),
       ].sort(),
@@ -201,7 +211,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     await env.DB.prepare(
       "DELETE FROM subscriptions WHERE id=? AND installation_id=?",
     )
-      .bind(decodeURIComponent(item), owner)
+      .bind(decodePath(item), owner)
       .run();
     return new Response(null, { status: 204 });
   }
@@ -214,7 +224,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     let journey = validateJourney(body.journey);
     const activity = validateActivity(body.activity),
       id = journey.id;
-    if (item && decodeURIComponent(item) !== id)
+    if (item && decodePath(item) !== id)
       throw new APIError(400, "id_mismatch");
     const existing = await env.DB.prepare(
       "SELECT * FROM subscriptions WHERE id=?",
@@ -239,7 +249,7 @@ async function route(request: Request, env: Env): Promise<Response> {
       );
     const activityJSON = activity ? JSON.stringify(activity) : null;
     await env.DB.prepare(
-      "INSERT INTO subscriptions(id,installation_id,revision,journey,activity,expires_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,journey=excluded.journey,activity=excluded.activity,expires_at=excluded.expires_at,updated_at=excluded.updated_at,last_sent=CASE WHEN subscriptions.activity IS excluded.activity THEN subscriptions.last_sent ELSE NULL END WHERE subscriptions.installation_id=excluded.installation_id AND excluded.revision>=subscriptions.revision",
+      "INSERT INTO subscriptions(id,installation_id,revision,journey,activity,expires_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,journey=excluded.journey,activity=excluded.activity,expires_at=excluded.expires_at,updated_at=excluded.updated_at,last_sent=CASE WHEN subscriptions.activity IS excluded.activity THEN subscriptions.last_sent ELSE NULL END WHERE subscriptions.installation_id=excluded.installation_id AND excluded.revision>subscriptions.revision",
     )
       .bind(
         id,
@@ -251,7 +261,13 @@ async function route(request: Request, env: Env): Promise<Response> {
         Date.now(),
       )
       .run();
-    return json({ id, revision, journey }, existing ? 200 : 201);
+    // The preflight read may race another write; acknowledge only the stored winner.
+    const stored = await env.DB.prepare("SELECT * FROM subscriptions WHERE id=?")
+      .bind(id).first<SubscriptionRow>();
+    if (!stored || stored.installation_id !== owner)
+      throw new APIError(404, "subscription_not_found");
+    if (stored.revision > revision) throw new APIError(409, "old_revision");
+    return json({ id, revision: stored.revision, journey: JSON.parse(stored.journey) }, existing ? 200 : 201);
   }
   throw new APIError(404, "not_found");
 }
@@ -268,7 +284,8 @@ export default {
       return response;
     } catch (e) {
       if (e instanceof APIError)
-        return json({ error: { code: e.code } }, e.status);
+        return json({ error: { code: e.code } }, e.status,
+          e.status === 429 ? { "retry-after": "60" } : undefined);
       console.error(JSON.stringify({ event: "request_failed" }));
       return json({ error: { code: "internal_error" } }, 500);
     }

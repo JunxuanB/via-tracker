@@ -313,7 +313,7 @@
     "expectedWaiting": false
   },
   {
-    "name": "past_eta",
+    "name": "arrival automatically completes journey",
     "journey": {
       "id": "fixture-journey",
       "title": "",
@@ -387,9 +387,9 @@
       "manualPhase": "riding"
     },
     "now": 1794008580.0,
-    "expectedPhase": "riding",
+    "expectedPhase": "completed",
     "expectedTarget": 1794008520.0,
-    "expectedWaiting": true
+    "expectedWaiting": false
   },
   {
     "name": "midboard_not_departed",
@@ -465,9 +465,9 @@
       "scheduleChangePrompted": false
     },
     "now": 1794000180.0,
-    "expectedPhase": "waiting",
-    "expectedTarget": 1794000120.0,
-    "expectedWaiting": true
+    "expectedPhase": "riding",
+    "expectedTarget": 1794008520.0,
+    "expectedWaiting": false
   },
   {
     "name": "zero travel before departure",
@@ -621,9 +621,9 @@
       "scheduleChangePrompted": false
     },
     "now": 1793991600.0,
-    "expectedPhase": "waiting",
-    "expectedTarget": 1793991600.0,
-    "expectedWaiting": true
+    "expectedPhase": "riding",
+    "expectedTarget": 1794008520.0,
+    "expectedWaiting": false
   },
   {
     "name": "cross midnight without estimate",

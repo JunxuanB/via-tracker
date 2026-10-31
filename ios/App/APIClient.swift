@@ -1,15 +1,16 @@
 import Foundation
 import Security
+import CryptoKit
 import TrackerCore
 
 struct InstallationIdentity: Codable, Sendable {
   var id: String
   var credential: String
-  static func load() throws -> Self {
+  static func load(namespace: String = "installation") throws -> Self {
     let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
       kSecAttrService as String: "com.junxuanb.viatracker.installation",
-      kSecAttrAccount as String: "installation", kSecReturnData as String: true,
+      kSecAttrAccount as String: namespace, kSecReturnData as String: true,
       kSecMatchLimit as String: kSecMatchLimitOne,
     ]
     var result: CFTypeRef?
@@ -68,23 +69,37 @@ actor APIClient {
     }
   }
   let baseURL: URL
+  private let identityNamespace: String
+  private var shuttingDown = false
+  private var inFlight = 0
   private var identity: InstallationIdentity?
   private var registered = false
   private var etag: String?
-  init(baseURL: URL) { self.baseURL = baseURL }
+  private var writeRetryAt: Date?
+  init(baseURL: URL, identityNamespace: String = "installation") {
+    self.baseURL = baseURL
+    self.identityNamespace = identityNamespace
+  }
   private func request(
-    _ path: String, method: String = "GET", body: Data? = nil, authenticated: Bool = false
+    _ path: String, method: String = "GET", body: Data? = nil, authenticated: Bool = false,
+    duringShutdown: Bool = false
   ) async throws -> (Data, HTTPURLResponse) {
+    guard !shuttingDown || duringShutdown else { throw CancellationError() }
+    inFlight += 1
+    defer { inFlight -= 1 }
+    if method != "GET", let writeRetryAt, Date() < writeRetryAt {
+      throw Failure.http(429, "rate_limited")
+    }
     guard let url = URL(string: path, relativeTo: baseURL) else { throw Failure.message("服务地址无效") }
     // ETag and the persisted snapshot are managed here; avoid a second cache
     // returning an older body or hiding the server's conditional response.
     var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
     request.httpMethod = method
-    request.timeoutInterval = 25
+    request.timeoutInterval = duringShutdown ? 5 : 25
     request.httpBody = body
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     if authenticated {
-      if identity == nil { identity = try InstallationIdentity.load() }
+      if identity == nil { identity = try InstallationIdentity.load(namespace: identityNamespace) }
       if let identity {
         request.setValue(
           "Bearer \(identity.id):\(identity.credential)", forHTTPHeaderField: "Authorization")
@@ -99,21 +114,29 @@ actor APIClient {
       let error = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
       let code = (error?["error"] as? [String: Any])?["code"] as? String ?? "unknown"
       if http.statusCode == 401 { registered = false }
+      if http.statusCode == 429 && method != "GET" {
+        let seconds = Double(http.value(forHTTPHeaderField: "Retry-After") ?? "") ?? 60
+        writeRetryAt = Date().addingTimeInterval(min(300, max(1, seconds)))
+      }
       throw Failure.http(http.statusCode, code)
     }
     return (data, http)
   }
+  func invalidateTrainCache() { etag = nil }
   func trains() async throws -> TrainEnvelope? {
     let (data, response) = try await request("/v1/trains")
     if response.statusCode == 304 { return nil }
     let envelope = try JSONDecoder().decode(TrainEnvelope.self, from: data)
     guard envelope.schemaVersion == 1 else { throw Failure.message("服务版本已更新，请更新 App。") }
+    guard !envelope.trains.isEmpty || envelope.sourceStatus != "healthy" else {
+      throw Failure.message("列车数据暂时为空，保留最近有效数据。")
+    }
     etag = response.value(forHTTPHeaderField: "ETag")
     return envelope
   }
   func register(environment: String) async throws {
     if registered { return }
-    if identity == nil { identity = try InstallationIdentity.load() }
+    if identity == nil { identity = try InstallationIdentity.load(namespace: identityNamespace) }
     guard let identity else { return }
     struct Registration: Encodable {
       var id: String
@@ -147,5 +170,36 @@ actor APIClient {
       "/v1/installations", method: "PATCH",
       body: JSONEncoder().encode(Registration(pushToken: token, environment: environment)),
       authenticated: true)
+  }
+  func testDeviceCode() throws -> String? {
+    guard let identity else { return nil }
+    return SHA256.hash(data: Data(identity.id.utf8)).prefix(4).map { String(format: "%02X", $0) }.joined()
+  }
+  func validatePublicTestEnvironment() async throws {
+    let (data, _) = try await request("/health")
+    struct Health: Decodable { var environment: String?; var remotePush: Bool? }
+    let health = try JSONDecoder().decode(Health.self, from: data)
+    guard health.environment == "test", health.remotePush == true else {
+      throw Failure.message("这个地址不是公网测试环境。")
+    }
+  }
+  func suspend(journeyIDs: [String], publicTest: Bool, remotePush: Bool, environment: String) async {
+    shuttingDown = true
+    // Let an already-started upload finish before removing its subscription.
+    while inFlight > 0 { try? await Task.sleep(for: .milliseconds(30)) }
+    guard remotePush else { return }
+    if identity == nil { identity = try? InstallationIdentity.load(namespace: identityNamespace) }
+    guard identity != nil else { return }
+    if publicTest {
+      _ = try? await request("/v1/test-device", method: "DELETE", authenticated: true, duringShutdown: true)
+      return
+    }
+    for id in journeyIDs {
+      _ = try? await request("/v1/subscriptions/\(id)", method: "DELETE", authenticated: true, duringShutdown: true)
+    }
+    struct Token: Encodable { var pushToken: String? = nil; var environment: String }
+    if let body = try? JSONEncoder().encode(Token(environment: environment)) {
+      _ = try? await request("/v1/installations", method: "PATCH", body: body, authenticated: true, duringShutdown: true)
+    }
   }
 }

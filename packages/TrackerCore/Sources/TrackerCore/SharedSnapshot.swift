@@ -5,15 +5,21 @@ import Foundation
   public struct JourneyActivityAttributes: ActivityAttributes {
     public typealias ContentState = ActivityState
     public var journeyID: String
-    public init(journeyID: String) { self.journeyID = journeyID }
+    public var testSource: String?
+    public init(journeyID: String, testSource: String? = nil) {
+      self.journeyID = journeyID
+      self.testSource = testSource
+    }
   }
 #endif
-public struct SharedSnapshot: Codable, Sendable {
+public struct SharedSnapshot: Codable, Equatable, Sendable {
   public var journey: Journey?
   public var apiBaseURL: String
-  public init(journey: Journey?, apiBaseURL: String) {
+  public var testMode: Bool?
+  public init(journey: Journey?, apiBaseURL: String, testMode: Bool? = nil) {
     self.journey = journey
     self.apiBaseURL = apiBaseURL
+    self.testMode = testMode
   }
   public static let groupID = "group.com.junxuanb.viatracker"
   public static func read() -> SharedSnapshot? {
@@ -33,7 +39,7 @@ public struct SharedSnapshot: Codable, Sendable {
       guard
         let directory = FileManager.default.containerURL(
           forSecurityApplicationGroupIdentifier: Self.groupID)
-      else { return }
+      else { throw CocoaError(.fileNoSuchFile) }
       let data = try JSONEncoder().encode(self)
       try data.write(
         to: directory.appendingPathComponent("current-journey.json"),

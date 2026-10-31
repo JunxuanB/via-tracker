@@ -62,6 +62,7 @@ export function normalize(
           code: s.code as string,
           name: s.station as string,
           timeZone: s.tz as string,
+          ...(typeof s.eta === "string" ? { reached: s.eta === "ARR" } : {}),
           ...(arrival ? { arrival } : {}),
           ...(departure ? { departure } : {}),
         },
@@ -100,6 +101,10 @@ export function normalize(
             position: {
               latitude: r.lat as number,
               longitude: r.lng as number,
+              ...(typeof r.speed === "number" && Number.isFinite(r.speed) && r.speed >= 0 && r.speed <= 400
+                ? { speedKmh: r.speed } : {}),
+              ...(typeof r.direction === "number" && Number.isFinite(r.direction) && r.direction >= 0 && r.direction < 360
+                ? { heading: r.direction } : {}),
               ...(epoch(text(r.poll)) !== undefined
                 ? { reportedAt: r.poll as string }
                 : {}),

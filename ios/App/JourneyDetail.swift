@@ -5,6 +5,7 @@ import TrackerCore
 struct JourneyDetail: View {
   @Bindable var store: AppStore
   var id: String
+  var showsBackButton = false
   @Environment(\.horizontalSizeClass) private var sizeClass
   @Environment(\.dismiss) private var dismiss
   @Environment(\.dynamicTypeSize) private var typeSize
@@ -12,76 +13,103 @@ struct JourneyDetail: View {
   @State private var correcting = false
   @State private var ending = false
   @State private var deleting = false
+  @State private var activityActionPending = false
   @State private var contentWidth: CGFloat = 0
-  private var journey: Journey? { store.journeys.first { $0.id == id } }
+  private var journey: Journey? {
+    store.journeys.first { $0.id == id }.map { Projection.resolvedJourney($0, now: store.qaDate ?? Date()) }
+  }
   var body: some View {
+    TimelineView(.periodic(from: .now, by: 15)) { context in
+      detail(now: store.qaDate ?? context.date)
+    }
+  }
+  private func detail(now: Date) -> some View {
     Group {
       if let j = journey {
         ScrollView {
-          VStack(alignment: .leading, spacing: 20) {
+          VStack(alignment: .leading, spacing: 12) {
             (typeSize.isAccessibilitySize
               ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
               : AnyLayout(HStackLayout(alignment: .top))) {
                 VStack(alignment: .leading, spacing: 6) {
-                  Text(j.displayTitle).font(.title2.bold())
-                  Text("\(j.legs.count) 段列车 · \(j.legs.first?.originServiceDate ?? "")").font(
-                    .subheadline
-                  ).foregroundStyle(.secondary)
+                  Text(detailTitle(j, now: now)).font(.system(size: 20, weight: .semibold))
+                  Text(
+                    VIATheme.date(
+                      j.legs.first?.boarding?.departure?.scheduledDate ?? Date(), format: "M月d日 EEE"
+                    ) + (j.legs.count > 1 ? " · \(j.legs.count) 段列车" : "")
+                  ).font(.system(size: 12)).foregroundStyle(VIATheme.muted)
                 }
                 if !typeSize.isAccessibilitySize { Spacer() }
                 StatusPill(
-                  title: j.currentLeg?.source == .reference
-                    ? "待同步" : store.isOffline ? "离线" : "已获取",
+                  title: dataStatus(j, now: now),
                   symbol: store.isOffline ? "wifi.slash" : "antenna.radiowaves.left.and.right")
               }
             if let message = store.sourceMessage {
               Notice(text: message, symbol: store.isOffline ? "wifi.slash" : "wifi.exclamationmark")
             }
-            if let fetched = j.currentLeg.flatMap({ Time.parse($0.snapshot.sourceFetchedAt) }),
-              (store.qaDate ?? Date()).timeIntervalSince(fetched) > 600
+            if !j.completed, let fetched = j.currentLeg.flatMap({ Time.parse($0.snapshot.sourceFetchedAt) }),
+              now.timeIntervalSince(fetched) > 600
             {
-              Notice(text: "列车数据已超过 10 分钟 · 按最近有效时刻显示", symbol: "clock.badge.exclamationmark")
+              Notice(text: "暂时没有新的列车信息，先显示上次的时刻。", symbol: "clock.badge.exclamationmark")
             }
             if j.pendingScheduleChange {
               VIACard(tinted: true) {
-                Text("正式时刻与规划不同").font(.headline)
-                Text("是否同步本行程的规划发车时间？之后官方计划变化也将遵循本次选择。").font(.subheadline)
-                Button("同步本行程规划") {
-                  var changed = j
+                Text("发车时间有变化").font(.headline)
+                Text("要根据新的发车时间调整出门安排吗？").font(.subheadline)
+                Button("跟随列车时间") {
+                  var changed = store.journeys.first(where: { $0.id == id }) ?? j
                   changed.chooseSync(true)
                   store.save(changed)
                 }.buttonStyle(PrimaryButtonStyle())
-                Button("保留我的规划") {
-                  var changed = j
+                Button("保持我的出门安排") {
+                  var changed = store.journeys.first(where: { $0.id == id }) ?? j
                   changed.chooseSync(false)
                   store.save(changed)
                 }.frame(minHeight: 44)
               }
             }
-            if j.currentLeg?.source == .reference { Notice(text: "参考时刻，待同步。不代表目标日期一定开行。") }
-            if sizeClass == .regular && contentWidth >= 800 {
-              HStack(alignment: .top, spacing: 24) {
-                VStack(spacing: 20) {
-                  hero(j)
-                  map(j)
-                  controls(j)
-                }.frame(maxWidth: .infinity)
-                VStack(spacing: 20) {
-                  timeline(j)
-                  connections(j)
-                }.frame(maxWidth: .infinity)
+            if j.completed {
+              VIACard(tinted: true) {
+                Label("行程已完成", systemImage: "checkmark.circle.fill").font(
+                  .system(size: 20, weight: .semibold))
+                Text("欢迎来到 \(j.legs.last?.alighting?.name ?? "目的站")").font(.system(size: 24))
               }
-            } else {
+            }
+            if j.currentLeg?.source == .reference { Notice(text: "暂未查到这一天的班次，先用参考时刻安排。") }
+            let phase = Projection.state(j, now: now)?.phase
+            if phase == .completed {
+              VIACard {
+                Text(j.displayTitle).font(.system(size: 24, weight: .semibold))
+                VIADivider()
+                Text("行程已保存在本机").font(.system(size: 12)).foregroundStyle(VIATheme.muted)
+              }
+            } else if phase != .riding {
+              phaseSteps(phase)
               hero(j)
-              timeline(j)
-              connections(j)
+              phaseInformation(j, phase: phase)
+              timeline(j, now: now)
+              connections(j, now: now)
               map(j)
-              controls(j)
+            } else {
+              if sizeClass == .regular && contentWidth >= 800 {
+                HStack(alignment: .top, spacing: 24) {
+                  VStack(spacing: 20) {
+                    hero(j)
+                    map(j)
+                  }.frame(maxWidth: .infinity)
+                  VStack(spacing: 20) {
+                    timeline(j, now: now)
+                    connections(j, now: now)
+                  }.frame(maxWidth: .infinity)
+                }
+              } else {
+                hero(j)
+                timeline(j, now: now)
+                connections(j, now: now)
+                map(j)
+              }
             }
             if let leg = j.currentLeg {
-              Text(
-                "获取于 \(Time.format(Time.parse(leg.snapshot.sourceFetchedAt),date:true)) · 进度按时刻推算"
-              ).font(.caption).foregroundStyle(.secondary)
               ForEach(Array(leg.snapshot.alerts.enumerated()), id: \.offset) { _, alert in
                 VIACard {
                   Text(alert.title).font(.headline)
@@ -94,34 +122,50 @@ struct JourneyDetail: View {
                 }
               }
             }
-            if let error = store.syncError { Notice(text: error) }
-          }.padding(24).frame(maxWidth: 1200).frame(maxWidth: .infinity)
+            controls(j, now: now).padding(.top, 12)
+            DisclosureGroup("更新信息") {
+              if let leg = j.currentLeg {
+                Text("上次更新 \(Time.format(Time.parse(leg.snapshot.sourceFetchedAt), date: true))")
+              }
+              Text("行程会按最新预计时间自动前进；没有预计时间时使用计划时间。")
+              if let error = store.syncError { Text(error) }
+            }.font(.caption).foregroundStyle(VIATheme.muted)
+          }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 20).frame(maxWidth: 1200)
+            .frame(maxWidth: .infinity)
         }.refreshable { await store.refresh() }
           .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { contentWidth = $0 }
       } else {
         ContentUnavailableView("行程不存在", systemImage: "tram")
       }
     }
-    .viaBackground().navigationTitle("行程详情").navigationBarTitleDisplayMode(.inline)
-    .toolbar {
-      Menu {
-        Button("编辑行程", systemImage: "slider.horizontal.3") { editing = true }
-        Button("更正个人阶段", systemImage: "hand.tap") { correcting = true }
-        if let j = journey { Button("设为主行程", systemImage: "location.fill") { store.setPrimary(j) } }
-        Button("结束追踪", systemImage: "stop.circle", role: .destructive) { ending = true }
-        Button("删除行程", systemImage: "trash", role: .destructive) { deleting = true }
-      } label: {
-        Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44)
-      }.accessibilityLabel("管理行程")
+    .viaBackground().toolbar(.hidden, for: .navigationBar)
+    .safeAreaInset(edge: .top, spacing: 0) {
+      VIANavigationBar(
+        title: "行程详情", back: showsBackButton ? "行程" : "", onBack: { dismiss() }
+      ) {
+        Menu {
+          Button("编辑行程", systemImage: "slider.horizontal.3") { editing = true }
+          Button("更正行程状态", systemImage: "hand.tap") { correcting = true }
+          if let j = journey {
+            Button("设为主行程", systemImage: "location.fill") { store.setPrimary(j) }
+          }
+          Button("结束追踪", systemImage: "stop.circle", role: .destructive) { ending = true }
+          Button("删除行程", systemImage: "trash", role: .destructive) { deleting = true }
+        } label: {
+          Image(systemName: "ellipsis").frame(minWidth: 44, minHeight: 44)
+        }.accessibilityLabel("管理行程").disabled(journey == nil)
+      }
     }
     .sheet(isPresented: $editing) {
-      if let journey { AddJourneyFlow(store: store, initialJourney: journey) }
+      if let saved = store.journeys.first(where: { $0.id == id }) {
+        AddJourneyFlow(store: store, initialJourney: saved)
+      }
     }
     .task {
       if store.qaScenario == "correct-stage" { correcting = true }
       if store.qaScenario == "end-confirm" { ending = true }
     }
-    .confirmationDialog("更正个人阶段", isPresented: $correcting, titleVisibility: .visible) {
+    .confirmationDialog("更正行程状态", isPresented: $correcting, titleVisibility: .visible) {
       if let j = journey {
         ForEach(Phase.allCases.filter { $0 != .transferring || j.currentLegIndex > 0 }, id: \.self)
         { phase in
@@ -132,7 +176,7 @@ struct JourneyDetail: View {
             store.save(changed)
           }
         }
-        Button("恢复自动判断") {
+        Button("按列车时间自动更新") {
           var changed = j
           changed.manualPhase = nil
           changed.completed = false
@@ -147,13 +191,71 @@ struct JourneyDetail: View {
     }
     .confirmationDialog("删除本机行程？", isPresented: $deleting, titleVisibility: .visible) {
       Button("删除行程", role: .destructive) {
-        if let journey {
-          store.delete(journey)
-          dismiss()
-        }
+        if let journey, store.delete(journey) { dismiss() }
       }
     } message: {
       Text("此操作会移除行程并取消后台订阅。")
+    }
+  }
+  private func dataStatus(_ j: Journey, now: Date) -> String {
+    if j.completed { return "已完成" }
+    if j.trackingEnded { return "已结束追踪" }
+    if j.currentLeg?.source == .reference { return "参考时刻" }
+    if store.isOffline { return "离线" }
+    guard let fetched = j.currentLeg.flatMap({ Time.parse($0.snapshot.sourceFetchedAt) }),
+      now.timeIntervalSince(fetched) <= 600, store.feed?.sourceStatus == "healthy",
+      store.errorMessage == nil else { return "最近数据" }
+    return "实时"
+  }
+  private func detailTitle(_ j: Journey, now: Date) -> String {
+    let phase = Projection.state(j, now: now)?.phase
+    let station = j.currentLeg?.boarding?.name ?? ""
+    if phase == .completed { return "已到达" }
+    if phase == .onTheWay { return "前往 \(station) 车站" }
+    if phase == .waiting { return "在 \(station) 候车" }
+    if phase == .transferring { return "在 \(station) 换乘" }
+    return "前往 \(j.legs.last?.alighting?.name ?? "")"
+  }
+  private func phaseSteps(_ phase: Phase?) -> some View {
+    HStack(spacing: 6) {
+      ForEach([Phase.beforeDeparture, .onTheWay, .waiting, .riding], id: \.self) { item in
+        if item != .beforeDeparture { Rectangle().fill(VIATheme.line).frame(width: 15, height: 1) }
+        Text(item.title).font(.system(size: 10, weight: phase == item ? .semibold : .regular))
+          .foregroundStyle(phase == item ? VIATheme.accent : VIATheme.muted)
+      }
+    }
+  }
+  @ViewBuilder private func phaseInformation(_ j: Journey, phase: Phase?) -> some View {
+    if let leg = j.currentLeg {
+      VIASectionLabel(title: phase == .transferring ? "接续信息" : "乘车信息")
+      VIACard(padding: 16, spacing: 0) {
+        HStack {
+          Label("上车站", systemImage: "location")
+          Spacer()
+          Text(leg.boarding?.name ?? "")
+        }.frame(minHeight: 48)
+        VIADivider()
+        HStack {
+          Label("火车计划发车", systemImage: "tram.fill")
+          Spacer()
+          Text(
+            Time.format(
+              leg.boarding?.departure?.scheduledDate,
+              zone: leg.boarding?.timeZone ?? "America/Toronto"))
+        }.frame(minHeight: 48)
+        VIADivider()
+        HStack {
+          Label(
+            phase == .beforeDeparture ? "前往耗时" : "目的站",
+            systemImage: phase == .beforeDeparture ? "figure.walk" : "mappin.and.ellipse")
+          Spacer()
+          Text(
+            phase == .beforeDeparture ? "\(j.travelToStationMinutes) 分钟" : leg.alighting?.name ?? ""
+          )
+        }.frame(minHeight: 48)
+      }.font(.system(size: 14))
+      if phase == .beforeDeparture { Notice(text: "计划出门按你的设置计算。即使列车预计晚点，也不会自动推迟出门提醒。") }
+      if phase == .waiting { Notice(text: "预计时间可能变化，请留意车站广播和登车安排。", symbol: "bell") }
     }
   }
   private func hero(_ j: Journey) -> some View {
@@ -161,18 +263,23 @@ struct JourneyDetail: View {
       JourneyHero(journey: j, now: store.qaDate ?? context.date, frozen: store.qaScenario != nil)
     }
   }
-  @ViewBuilder private func timeline(_ j: Journey) -> some View {
+  @ViewBuilder private func timeline(_ j: Journey, now: Date) -> some View {
     if let leg = j.currentLeg {
-      VStack(alignment: .leading, spacing: 12) {
-        Text("当前段 · VIA \(leg.trainNumber)").font(.headline)
+      VStack(alignment: .leading, spacing: 9) {
+        VIASectionLabel(
+          title: j.legs.count > 1 ? "当前段 · VIA \(leg.trainNumber)" : "沿途站点", detail: "计划 / 预计")
         StationTimeline(
           calls: leg.snapshot.calls, boardingIndex: leg.boardingIndex,
-          alightingIndex: leg.alightingIndex)
+          alightingIndex: leg.alightingIndex, now: now,
+          riding: Projection.state(j, now: now)?.phase == .riding)
       }
+      .padding(contentWidth >= 800 ? 18 : 0)
+      .background(
+        contentWidth >= 800 ? VIATheme.surface : .clear, in: RoundedRectangle(cornerRadius: 22))
     }
   }
-  @ViewBuilder private func connections(_ j: Journey) -> some View {
-    if let state = Projection.state(j), let number = state.nextTrainNumber,
+  @ViewBuilder private func connections(_ j: Journey, now: Date) -> some View {
+    if let state = Projection.state(j, now: now), let number = state.nextTrainNumber,
       let minutes = state.connectionMinutes, j.legs.indices.contains(j.currentLegIndex + 1)
     {
       let next = j.legs[j.currentLegIndex + 1]
@@ -211,156 +318,332 @@ struct JourneyDetail: View {
     }
   }
   @ViewBuilder private func map(_ j: Journey) -> some View {
-    if let leg = j.currentLeg { TrainMap(leg: leg, now: store.qaDate) }
+    if let leg = j.currentLeg {
+      TrainMap(
+        train: leg.snapshot, origin: leg.boarding?.name ?? "", destination: leg.alighting?.name ?? "",
+        now: store.qaDate, isOffline: store.isOffline, reference: leg.source == .reference,
+        height: contentWidth >= 800 ? 270 : 160
+      ).id(leg.id)
+    }
   }
-  private func controls(_ j: Journey) -> some View {
+  private func controls(_ j: Journey, now: Date) -> some View {
     VStack(spacing: 14) {
-      if !j.completed && !j.trackingEnded, let phase = Projection.state(j)?.phase {
-        Button(action: {
-          var changed = j
-          switch phase {
-          case .beforeDeparture: changed.manualPhase = .onTheWay
-          case .onTheWay: changed.manualPhase = .waiting
-          case .waiting, .transferring: changed.manualPhase = .riding
-          case .riding: changed.advanceLeg()
-          case .completed: break
-          }
-          store.save(changed)
-        }) {
-          Label(
-            actionTitle(phase, j: j),
-            systemImage: phase == .riding ? "checkmark.circle" : "hand.tap")
-        }.buttonStyle(PrimaryButtonStyle())
+      if j.trackingEnded {
+        Notice(text: "追踪已结束，行程仍保存在本机。可开启实时活动继续追踪。", symbol: "stop.circle")
       }
       HStack {
         Text(store.activities.journeyID == j.id ? "实时活动进行中" : "实时活动未开启").font(.caption)
           .foregroundStyle(.secondary)
         Spacer()
         if !j.completed {
-          Button(store.activities.journeyID == j.id ? "关闭活动" : "开启 / 续开") {
+          Button {
+            activityActionPending = true
             Task {
-              if store.activities.journeyID == j.id {
-                await store.activities.end()
+              defer { activityActionPending = false }
+              let closing = store.activities.journeyID == j.id
+              if closing {
+                await store.activities.restore()
+                if store.activities.journeyID == j.id { await store.activities.end() }
               } else {
                 await store.startActivity(j)
               }
             }
-          }.frame(minHeight: 44)
+          } label: {
+            HStack(spacing: 6) {
+              if activityActionPending || store.isStartingActivity || store.activities.isChanging { ProgressView() }
+              Text(store.activities.journeyID == j.id ? "关闭实时活动" : "开启实时活动")
+            }
+          }.frame(minHeight: 44).disabled(activityActionPending || store.isStartingActivity || store.activities.isChanging)
         }
       }
-      if let message = store.activities.message {
+      if let message = store.activities.feedback(for: j.id) {
         Text(message).font(.caption).foregroundStyle(.secondary)
       }
       if !store.activities.enabled { Notice(text: "系统未允许实时活动，请在设置中开启。行程仍可在 App 内查看。") }
     }
   }
-  private func actionTitle(_ phase: Phase, j: Journey) -> String {
-    switch phase {
-    case .beforeDeparture: "已出门"
-    case .onTheWay: "已到站"
-    case .waiting, .transferring: "已上车"
-    case .riding: j.currentLegIndex + 1 < j.legs.count ? "已到换乘站" : "确认已到达"
-    case .completed: "已完成"
-    }
-  }
+
 }
 struct StationTimeline: View {
   var calls: [StationCall]
   var boardingIndex: Int?
   var alightingIndex: Int?
+  var now = Date()
+  var riding = false
+  var plannedOnly = false
   @Environment(\.dynamicTypeSize) private var typeSize
+  private var visibleCalls: [StationCall] {
+    calls.filter {
+      (boardingIndex == nil || $0.index >= boardingIndex!)
+        && (alightingIndex == nil || $0.index <= alightingIndex!)
+    }
+  }
+  private var nextIndex: Int? {
+    guard riding else { return boardingIndex }
+    return visibleCalls.first {
+      $0.reached != true && (($0.arrival ?? $0.departure)?.effectiveDate.map { $0 > now } ?? false)
+    }?.index
+  }
   var body: some View {
-    VIACard {
-      ForEach(calls) { call in
-        let selected =
-          (boardingIndex == nil || call.index >= boardingIndex!)
-          && (alightingIndex == nil || call.index <= alightingIndex!)
-        let event = call.index == boardingIndex ? call.departure : call.arrival ?? call.departure
-        HStack(alignment: .top, spacing: 14) {
-          VStack(spacing: 5) {
-            Image(
-              systemName: call.index == boardingIndex || call.index == alightingIndex
-                ? "circle.inset.filled" : "circle"
-            )
-            .font(.caption).foregroundStyle(selected ? VIATheme.accent : .secondary)
-            if call.index != calls.last?.index {
-              Rectangle().fill(selected ? VIATheme.yellow.opacity(0.6) : .secondary.opacity(0.2))
-                .frame(width: 2).frame(minHeight: 44)
+    VStack(spacing: 0) {
+      ForEach(visibleCalls) { call in
+        let rawEvent = call.index == boardingIndex ? call.departure : call.arrival ?? call.departure
+        let event = plannedOnly ? rawEvent.map { EventTime(scheduled: $0.scheduled) } : rawEvent
+        let passed = !plannedOnly && (call.reached == true || (riding && (event?.effectiveDate.map { $0 < now } ?? false)))
+        let current = call.index == nextIndex
+        HStack(alignment: .top, spacing: 9) {
+          ZStack(alignment: .top) {
+            if call.index != visibleCalls.last?.index {
+              Rectangle().fill(passed ? VIATheme.yellow : VIATheme.line).frame(width: 2).padding(
+                .top, 9)
             }
-          }.accessibilityHidden(true)
-          (typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
-            : AnyLayout(HStackLayout(alignment: .top))) {
-              VStack(alignment: .leading, spacing: 5) {
-                Text(call.name).font(.headline)
-                Text(
-                  call.index == boardingIndex
-                    ? "上车站 · 发车"
-                    : call.index == alightingIndex
-                      ? "下车站 · 到达" : event?.estimatedDate == nil ? "计划到站" : "预计到站"
-                )
-                .font(.caption).foregroundStyle(.secondary)
-                Text(call.timeZone).font(.caption2).foregroundStyle(.secondary)
-              }
-              if !typeSize.isAccessibilitySize { Spacer() }
-              VStack(alignment: typeSize.isAccessibilitySize ? .leading : .trailing, spacing: 5) {
-                Text(Time.format(event?.effectiveDate, zone: call.timeZone, date: true))
-                  .monospacedDigit()
-                if event?.estimatedDate != nil {
-                  Text(Time.format(event?.scheduledDate, zone: call.timeZone)).strikethrough().font(
-                    .caption
-                  ).foregroundStyle(.secondary)
-                } else {
-                  Text("按计划").font(.caption).foregroundStyle(.secondary)
+            Circle().fill(current || passed ? VIATheme.yellow : VIATheme.surface)
+              .overlay(
+                Circle().stroke(current || passed ? VIATheme.accent : VIATheme.muted, lineWidth: 2)
+              )
+              .frame(width: current ? 11 : 7, height: current ? 11 : 7)
+              .background {
+                if current {
+                  Circle().fill(VIATheme.yellow.opacity(0.25)).frame(width: 17, height: 17)
                 }
               }
-            }
-        }.opacity(selected ? 1 : 0.5).accessibilityElement(children: .combine)
+              .padding(.top, 5)
+          }.frame(width: 18).accessibilityHidden(true)
+          (typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+            : AnyLayout(HStackLayout(alignment: .top))) {
+              VStack(alignment: .leading, spacing: 3) {
+                Text(call.name).font(.system(size: 14, weight: .medium))
+                  .foregroundStyle(passed ? VIATheme.muted : VIATheme.ink)
+                Text(description(call, passed: passed, current: current, event: event))
+                  .font(.system(size: 11)).foregroundStyle(VIATheme.muted)
+              }
+              if !typeSize.isAccessibilitySize { Spacer(minLength: 8) }
+              VStack(alignment: .trailing, spacing: 3) {
+                Text(Time.format(event?.effectiveDate, zone: call.timeZone))
+                  .font(.system(size: 15)).foregroundStyle(
+                    current ? VIATheme.accent : passed ? VIATheme.muted : VIATheme.ink)
+                if let estimated = event?.estimatedDate, let scheduled = event?.scheduledDate,
+                  abs(estimated.timeIntervalSince(scheduled)) >= 60
+                {
+                  Text(Time.format(scheduled, zone: call.timeZone)).strikethrough()
+                    .font(.system(size: 11)).foregroundStyle(VIATheme.muted)
+                }
+                // Show a date or timezone only where it changes the interpretation of the time.
+                if let date = event?.effectiveDate, let first = visibleCalls.first,
+                  let firstDate = (first.departure ?? first.arrival)?.effectiveDate,
+                  VIATheme.date(date, zone: call.timeZone, format: "yyyy-MM-dd")
+                    != VIATheme.date(firstDate, zone: first.timeZone, format: "yyyy-MM-dd")
+                    || call.timeZone != first.timeZone
+                {
+                  Text(VIATheme.date(date, zone: call.timeZone, format: "M/d z"))
+                    .font(.system(size: 10)).foregroundStyle(VIATheme.muted)
+                }
+              }.monospacedDigit()
+            }.padding(.bottom, call.index == visibleCalls.last?.index ? 0 : 13)
+        }.fixedSize(horizontal: false, vertical: true).accessibilityElement(children: .combine)
       }
+    }.frame(maxWidth: .infinity, alignment: .leading)
+  }
+  private func description(_ call: StationCall, passed: Bool, current: Bool, event: EventTime?)
+    -> String
+  {
+    if passed { return call.index == alightingIndex || call.index == visibleCalls.last?.index ? "已到达" : "已到站" }
+    let prefix =
+      call.index == alightingIndex
+      ? "目的站" : current && riding ? "下一站" : call.index == boardingIndex ? "上车站" : "沿途站"
+    return
+      "\(prefix) · \(event?.estimatedDate == nil ? "计划" : "预计")\(call.index == boardingIndex ? "发车" : "到达")"
+  }
+}
+// Both saved journeys and train details use the same live snapshot and map controls.
+struct TrainMap: View {
+  var train: TrainSnapshot
+  var origin: String
+  var destination: String
+  var now: Date? = nil
+  var isOffline = false
+  var reference = false
+  var height: CGFloat = 160
+  @State private var expanded = false
+  @State private var showingRoute = false
+  private var validPosition: TrainPosition? {
+    guard let position = train.position, position.latitude.isFinite, position.longitude.isFinite,
+      CLLocationCoordinate2DIsValid(CLLocationCoordinate2D(
+        latitude: position.latitude, longitude: position.longitude)) else { return nil }
+    return position
+  }
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack {
+        VIASectionLabel(title: "列车位置", detail: "VIA \(train.trainNumber)")
+        Spacer()
+        Button("线路图", systemImage: "point.topleft.down.to.point.bottomright.curvepath") { showingRoute = true }
+          .font(.caption).frame(minHeight: 44)
+      }
+      if let position = validPosition {
+        TrainPositionMap(trainNumber: train.trainNumber, position: position, interactive: false)
+          .frame(height: height).clipShape(RoundedRectangle(cornerRadius: 18))
+          .overlay(alignment: .bottomTrailing) {
+            Button("展开地图", systemImage: "arrow.up.left.and.arrow.down.right") { expanded = true }
+              .font(.system(size: 12, weight: .medium)).padding(.horizontal, 12).frame(minHeight: 44)
+              .background(VIATheme.surface, in: Capsule()).padding(10)
+          }
+        positionCaption(position)
+        if isOffline {
+          Text("离线显示最近的列车位置，底图可能无法加载。")
+            .font(.caption).foregroundStyle(VIATheme.muted)
+        }
+      } else {
+        VIACard(padding: 16, spacing: 12) {
+          Label("暂无列车定位", systemImage: "map").font(.subheadline)
+          ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+              Text(origin)
+              Image(systemName: "arrow.right").foregroundStyle(VIATheme.accent)
+              Text(destination)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+              Text(origin)
+              Label(destination, systemImage: "arrow.down")
+            }
+          }.font(.headline)
+          Text("可查看沿途站点。列车位置可用时，地图会自动显示。")
+            .font(.caption).foregroundStyle(VIATheme.muted)
+        }
+      }
+      if !train.departed, !train.arrived, let first = train.calls.first {
+        HStack {
+          Label("始发站 · \(first.name)", systemImage: "mappin.circle").font(.subheadline)
+          Spacer()
+          Text(Time.format(first.departure?.effectiveDate, zone: first.timeZone))
+            .font(.subheadline.monospacedDigit())
+        }
+      } else if let next = train.calls.first(where: {
+        $0.reached != true && ($0.arrival?.effectiveDate.map { $0 > (now ?? Date()) } ?? false)
+      }), !train.arrived {
+        HStack {
+          Label("下一站 · \(next.name)", systemImage: "mappin.circle").font(.subheadline)
+          Spacer()
+          Text(Time.format(next.arrival?.effectiveDate, zone: next.timeZone))
+            .font(.subheadline.monospacedDigit())
+        }
+      }
+    }
+    .sheet(isPresented: $showingRoute) {
+      NavigationStack {
+        ScrollView {
+          VStack(alignment: .leading, spacing: 20) {
+            Text("\(train.from) → \(train.to)").font(.title3.bold())
+            Text("沿途站点示意").font(.subheadline).foregroundStyle(.secondary)
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+              StationTimeline(calls: train.calls, now: now ?? context.date, riding: train.departed)
+            }
+            officialMapLink
+          }.padding(24).frame(maxWidth: 700).frame(maxWidth: .infinity)
+        }.viaBackground().navigationTitle("VIA \(train.trainNumber) · 线路图")
+          .navigationBarTitleDisplayMode(.inline)
+          .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { showingRoute = false } } }
+      }.presentationDetents([.large])
+    }
+    .sheet(isPresented: $expanded) {
+      NavigationStack {
+        Group {
+          if let position = validPosition {
+            TrainPositionMap(trainNumber: train.trainNumber, position: position, interactive: true)
+              .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(alignment: .leading, spacing: 8) {
+                  Text("\(origin) → \(destination)").font(.headline)
+                  positionCaption(position)
+                  officialMapLink
+                  if isOffline { Text("离线 · 按最近位置显示，底图可能无法加载").font(.caption) }
+                }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
+                  .background(VIATheme.background)
+              }
+          } else {
+            ContentUnavailableView("暂无列车定位", systemImage: "map",
+              description: Text("暂未收到有效坐标，稍后会自动更新。"))
+          }
+        }.viaBackground().navigationTitle("VIA \(train.trainNumber) · 列车位置")
+          .navigationBarTitleDisplayMode(.inline)
+          .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { expanded = false } } }
+      }.presentationDetents([.large]).presentationDragIndicator(.visible)
+    }
+  }
+  @ViewBuilder private var officialMapLink: some View {
+    // rawKey preserves the date suffix when VIA lists multiple runs of one train.
+    let key = train.rawKey.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) ?? train.trainNumber
+    if reference {
+      Text("这天的列车位置尚未提供。").font(.caption).foregroundStyle(.secondary)
+    } else {
+      Link("在 VIA 官网查看地图", destination: URL(string: "https://tsimobile.viarail.ca/#\(key)")!)
+        .font(.subheadline).frame(minHeight: 44)
+    }
+  }
+  private func positionCaption(_ position: TrainPosition) -> some View {
+    TimelineView(.periodic(from: .now, by: 30)) { context in
+      let reported = position.reportedAt.flatMap(Time.parse)
+      let stale = reported.map { (now ?? context.date).timeIntervalSince($0) > 300 } ?? true
+      HStack(spacing: 12) {
+        if let speed = position.speedKmh, speed.isFinite, !stale, !isOffline {
+          Label("\(Int(speed.rounded())) km/h", systemImage: "speedometer")
+        }
+        Label(reported.map {
+          "\(Time.format($0)) 更新\(stale ? " · 最近位置" : "")"
+        } ?? "最近位置", systemImage: stale ? "clock" : "location.fill")
+      }.font(.caption).foregroundStyle(stale ? VIATheme.amber : VIATheme.muted)
     }
   }
 }
-struct TrainMap: View {
-  var leg: TrainLeg
-  var now: Date? = nil
-  @State private var expanded = false
+private struct TrainPositionMap: View {
+  var trainNumber: String
+  var position: TrainPosition
+  var interactive: Bool
+  @State private var camera: MapCameraPosition = .automatic
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  private var coordinate: CLLocationCoordinate2D {
+    CLLocationCoordinate2D(latitude: position.latitude, longitude: position.longitude)
+  }
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      if let position = leg.snapshot.position {
-        let coordinate = CLLocationCoordinate2D(
-          latitude: position.latitude, longitude: position.longitude)
-        Map(
-          initialPosition: .region(
-            MKCoordinateRegion(
-              center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.3, longitudeDelta: 0.3)))
-        ) {
-          Annotation("VIA \(leg.trainNumber)", coordinate: coordinate) {
-            Image(systemName: "tram.fill").padding(10).foregroundStyle(.black).background(
-              VIATheme.yellow, in: Circle())
+    Map(position: $camera, interactionModes: interactive ? .all : []) {
+      Annotation("VIA \(trainNumber)", coordinate: coordinate) {
+        VStack(spacing: 3) {
+          if let heading = position.heading, heading.isFinite {
+            Image(systemName: "location.north.fill").rotationEffect(.degrees(heading))
+              .font(.caption).foregroundStyle(VIATheme.accent)
           }
-        }.frame(height: expanded ? 420 : 190).clipShape(RoundedRectangle(cornerRadius: 22))
-        HStack {
-          Text(
-            position.reportedAt.flatMap(Time.parse).map {
-              "位置上报 \(Time.format($0,date:true))\((now ?? Date()).timeIntervalSince($0)>300 ? " · 定位较旧":"")"
-            } ?? "位置上报时间未知"
-          ).font(.caption).foregroundStyle(.secondary)
-          Spacer()
-          Button(expanded ? "收起地图" : "展开地图", systemImage: "arrow.up.left.and.arrow.down.right") {
-            expanded.toggle()
-          }.labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
-        }
-      } else {
-        VIACard {
-          Label("路线示意 · 暂无列车定位", systemImage: "map").font(.subheadline).foregroundStyle(.secondary)
-          HStack {
-            Text(leg.boarding?.name ?? "")
-            Image(systemName: "arrow.right").foregroundStyle(VIATheme.accent)
-            Text(leg.alighting?.name ?? "")
-          }.font(.headline)
-          Text("此示意不代表实际铁路轨迹。").font(.caption).foregroundStyle(.secondary)
-        }
+          Image(systemName: "tram.fill")
+        }.padding(10).foregroundStyle(VIATheme.ink)
+          .background(VIATheme.tintSurface, in: Circle())
+          .overlay(Circle().stroke(VIATheme.accent, lineWidth: 2))
+          .accessibilityLabel("VIA \(trainNumber) 最近上报的位置")
       }
     }
+    .mapControls {
+      if interactive {
+        MapCompass()
+        MapScaleView()
+      }
+    }
+    .overlay(alignment: .bottomTrailing) {
+      if interactive {
+        Button {
+          withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { recenter() }
+        } label: {
+          Label("回到列车", systemImage: "location.fill")
+            .font(.system(size: 14, weight: .medium)).padding(.horizontal, 16).frame(minHeight: 48)
+        }.buttonStyle(.plain).foregroundStyle(VIATheme.accent)
+          .background(VIATheme.surface, in: Capsule()).padding(16)
+      }
+    }
+    .onAppear { recenter() }
+    .onChange(of: position) { _, _ in
+      // Keep the user's chosen area while they inspect the expanded map.
+      if !interactive || !camera.positionedByUser { recenter() }
+    }
+  }
+  private func recenter() {
+    camera = .region(MKCoordinateRegion(center: coordinate,
+      span: MKCoordinateSpan(latitudeDelta: 0.25, longitudeDelta: 0.25)))
   }
 }

@@ -10,7 +10,10 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "deploy": "wrangler deploy",
     "db:local": "wrangler d1 migrations apply via-tracker --local",
-    "db:remote": "wrangler d1 migrations apply via-tracker --remote"
+    "db:remote": "wrangler d1 migrations apply via-tracker --remote",
+    "test-console": "node --import tsx tools/test-console/server.ts",
+    "deploy:test": "wrangler deploy --env test",
+    "db:test": "wrangler d1 migrations apply via-tracker-test --env test --remote"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "^13.1.0",

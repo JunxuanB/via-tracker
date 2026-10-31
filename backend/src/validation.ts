@@ -1,6 +1,7 @@
 import { APIError, obj, str, int } from "./http.ts";
 import {
   stations,
+  epoch,
   type Journey,
   type TrainSnapshot,
   type TrainLeg,
@@ -56,6 +57,12 @@ export function validateJourney(value: unknown): Journey {
       serviceDate = str(l.originServiceDate, 10);
     if (!/^\d+$/.test(trainNumber) || !/^\d{4}-\d{2}-\d{2}$/.test(serviceDate))
       throw new APIError(400, "invalid_identity");
+    if (s.id !== `${trainNumber}:${serviceDate}` || s.trainNumber !== trainNumber || s.originServiceDate !== serviceDate)
+      throw new APIError(400, "snapshot_identity_mismatch");
+    const fetchedAt = str(s.sourceFetchedAt, 40);
+    if (epoch(fetchedAt) === undefined || !/(Z|[+-]\d{2}:\d{2})$/.test(fetchedAt))
+      throw new APIError(400, "invalid_source_time");
+    const position = s.position == null ? undefined : obj(s.position);
     if (!Array.isArray(s.calls) || s.calls.length > 300)
       throw new APIError(400, "invalid_calls");
     const rawCalls = s.calls.map((v) => {
@@ -66,6 +73,7 @@ export function validateJourney(value: unknown): Journey {
         tz: str(c.timeZone, 80),
         arrival: c.arrival,
         departure: c.departure,
+        eta: typeof c.reached === "boolean" ? c.reached ? "ARR" : "" : undefined,
       };
     });
     let validated: TrainSnapshot;
@@ -77,13 +85,32 @@ export function validateJourney(value: unknown): Journey {
             from: s.from,
             to: s.to,
             times: rawCalls,
+            departed: s.departed === true,
+            arrived: s.arrived === true,
+            lat: position?.latitude,
+            lng: position?.longitude,
+            poll: position?.reportedAt,
+            speed: position?.speedKmh,
+            direction: position?.heading,
           },
         },
-        str(s.sourceFetchedAt, 40),
+        fetchedAt,
         int(s.version, 0, Number.MAX_SAFE_INTEGER),
       )[0];
     } catch {
       throw new APIError(400, "invalid_snapshot");
+    }
+    validated.rawKey = str(s.rawKey, 100);
+    if (Array.isArray(s.alerts)) {
+      if (s.alerts.length > 50) throw new APIError(400, "too_many_alerts");
+      validated.alerts = s.alerts.map(value => {
+        const alert = obj(value);
+        const title = typeof alert.title === "string" ? alert.title.slice(0, 500) : "";
+        const body = typeof alert.body === "string" ? alert.body.slice(0, 5000) : "";
+        const url = typeof alert.url === "string" && /^https?:\/\//.test(alert.url)
+          ? alert.url.slice(0, 2048) : undefined;
+        return { title, body, ...(url ? { url } : {}) };
+      });
     }
     if (validated.calls.length !== s.calls.length)
       throw new APIError(400, "invalid_station_event");
@@ -100,6 +127,17 @@ export function validateJourney(value: unknown): Journey {
     const source = l.source;
     if (source !== "reference" && source !== "official")
       throw new APIError(400, "invalid_source");
+    if (source === "reference") {
+      validated.departed = false;
+      validated.arrived = false;
+      delete validated.position;
+      validated.alerts = [];
+      for (const call of validated.calls) {
+        delete call.reached;
+        if (call.arrival) delete call.arrival.estimated;
+        if (call.departure) delete call.departure.estimated;
+      }
+    }
     const leg: TrainLeg = {
       id: str(l.id),
       trainNumber,
@@ -119,11 +157,14 @@ export function validateJourney(value: unknown): Journey {
     if (
       !boarding?.departure ||
       !alighting?.arrival ||
-      boarding.index >= alighting.index
+      boarding.index >= alighting.index ||
+      epoch(alighting.arrival.scheduled)! < epoch(boarding.departure.scheduled)!
     )
       throw new APIError(400, "invalid_station_order");
     return leg;
   });
+  if (new Set(legs.map(leg => leg.id)).size !== legs.length)
+    throw new APIError(400, "duplicate_leg_id");
   for (let i = 1; i < legs.length; i++)
     if (legs[i - 1].alightingCode !== legs[i].boardingCode)
       throw new APIError(400, "different_connection_station");

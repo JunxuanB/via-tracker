@@ -16,6 +16,7 @@ export interface StationCall {
   timeZone: string;
   arrival?: EventTime;
   departure?: EventTime;
+  reached?: boolean;
 }
 export interface TrainSnapshot {
   id: string;
@@ -29,7 +30,7 @@ export interface TrainSnapshot {
   calls: StationCall[];
   sourceFetchedAt: string;
   version: number;
-  position?: { latitude: number; longitude: number; reportedAt?: string };
+  position?: { latitude: number; longitude: number; reportedAt?: string; speedKmh?: number; heading?: number };
   alerts: { title: string; body: string; url?: string }[];
   qualityFlags?: string[];
 }
@@ -91,7 +92,26 @@ export function stations(leg: TrainLeg) {
     ),
   };
 }
-export function project(j: Journey, now: number): ActivityState {
+export function resolvedJourney(journey: Journey, now: number): Journey {
+  const result = { ...journey };
+  while (!result.completed) {
+    const leg = result.legs[result.currentLegIndex];
+    if (!leg) break;
+    const { alighting } = stations(leg);
+    const arrival = epoch(alighting?.arrival?.estimated) ?? epoch(alighting?.arrival?.scheduled);
+    const terminal = leg.source === "official" && leg.snapshot.arrived
+      && leg.alightingIndex === leg.snapshot.calls.at(-1)?.index
+      && !leg.snapshot.calls.at(-1)?.departure;
+    const reportedArrival = leg.source === "official" && alighting?.reached === true;
+    if (!terminal && !reportedArrival && (arrival === undefined || now < arrival)) break;
+    if (result.currentLegIndex + 1 < result.legs.length) result.currentLegIndex++;
+    else result.completed = true;
+    delete result.manualPhase;
+  }
+  return result;
+}
+export function project(journey: Journey, now: number): ActivityState {
+  const j = resolvedJourney(journey, now);
   const i = Math.min(Math.max(j.currentLegIndex, 0), j.legs.length - 1),
     leg = j.legs[i];
   if (!leg) throw new Error("empty_journey");
@@ -104,7 +124,7 @@ export function project(j: Journey, now: number): ActivityState {
   let phase: Phase = j.completed
     ? "completed"
     : (j.manualPhase ??
-      (i > 0
+      (now >= estDep ? "riding" : i > 0
         ? "transferring"
         : now < leave
           ? "beforeDeparture"
@@ -131,7 +151,7 @@ export function project(j: Journey, now: number): ActivityState {
     destination: a?.name ?? leg.alightingCode,
     origin: b?.name ?? leg.boardingCode,
     targetEpoch: target,
-    scheduledEpoch: phase === "riding" || phase === "completed" ? arr : dep,
+    scheduledEpoch: phase === "beforeDeparture" ? leave : phase === "riding" || phase === "completed" ? arr : dep,
     sourceFetchedEpoch,
     validUntilEpoch: sourceFetchedEpoch + 600,
     progress: Math.min(

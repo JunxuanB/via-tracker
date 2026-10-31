@@ -3,7 +3,7 @@
   "info": {
     "title": "VIA Tracker API",
     "version": "1.0.0",
-    "description": "No account. Bearer value is installationID:credential. Times use ISO8601 with offsets; planning and ActivityState timestamps are Unix seconds. Ordinary and activity tokens are separate. Snapshot and client revision are separate dimensions. Upstream fields are observations, not a VIA guarantee."
+    "description": "No account. Bearer value is installationID:credential. Times use ISO8601 with offsets; planning and ActivityState timestamps are Unix seconds. Ordinary and activity tokens are separate. Snapshot and client revision are separate dimensions. Upstream fields are observations, not a VIA guarantee. Journey progress automatically follows estimated event times, falling back to scheduled times; automatic arrival is a display projection, not a station actual-event record. Equal client revisions are idempotent and never overwrite the stored winner."
   },
   "servers": [
     {
@@ -37,7 +37,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["status", "schemaVersion"]
+                  "required": [
+                    "status",
+                    "schemaVersion"
+                  ]
                 }
               }
             }
@@ -98,6 +101,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds before retrying a rate-limited request",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -186,6 +198,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds before retrying a rate-limited request",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -297,6 +318,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds before retrying a rate-limited request",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
             }
           },
           "500": {
@@ -338,7 +368,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["id"]
+                  "required": [
+                    "id"
+                  ]
                 }
               }
             }
@@ -399,6 +431,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds before retrying a rate-limited request",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -440,7 +481,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["id"]
+                  "required": [
+                    "id"
+                  ]
                 }
               }
             }
@@ -501,6 +544,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds before retrying a rate-limited request",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -546,7 +598,9 @@
                       }
                     }
                   },
-                  "required": ["subscriptions"]
+                  "required": [
+                    "subscriptions"
+                  ]
                 }
               }
             }
@@ -607,6 +661,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds before retrying a rate-limited request",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -692,6 +755,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds before retrying a rate-limited request",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -801,6 +873,15 @@
                   "$ref": "#/components/schemas/Error"
                 }
               }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds before retrying a rate-limited request",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
             }
           },
           "500": {
@@ -869,7 +950,9 @@
             "format": "date-time"
           }
         },
-        "required": ["scheduled"]
+        "required": [
+          "scheduled"
+        ]
       },
       "StationCall": {
         "type": "object",
@@ -891,9 +974,18 @@
           },
           "departure": {
             "$ref": "#/components/schemas/EventTime"
+          },
+          "reached": {
+            "type": "boolean",
+            "description": "VIA per-station eta == ARR flag; not an actual arrival timestamp. Absent on reference schedules."
           }
         },
-        "required": ["index", "code", "name", "timeZone"]
+        "required": [
+          "index",
+          "code",
+          "name",
+          "timeZone"
+        ]
       },
       "Position": {
         "type": "object",
@@ -907,9 +999,24 @@
           "reportedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "speedKmh": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 400,
+            "description": "Last reported speed in km/h, from VIA speed."
+          },
+          "heading": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMaximum": 360,
+            "description": "Last reported heading clockwise from north."
           }
         },
-        "required": ["latitude", "longitude"]
+        "required": [
+          "latitude",
+          "longitude"
+        ]
       },
       "Alert": {
         "type": "object",
@@ -925,7 +1032,10 @@
             "format": "uri"
           }
         },
-        "required": ["title", "body"]
+        "required": [
+          "title",
+          "body"
+        ]
       },
       "TrainSnapshot": {
         "type": "object",
@@ -1031,7 +1141,10 @@
           },
           "source": {
             "type": "string",
-            "enum": ["official", "reference"]
+            "enum": [
+              "official",
+              "reference"
+            ]
           },
           "referenceInstanceID": {
             "type": "string"
@@ -1104,7 +1217,11 @@
           },
           "syncChoice": {
             "type": "string",
-            "enum": ["ask", "keep", "automatic"]
+            "enum": [
+              "ask",
+              "keep",
+              "automatic"
+            ]
           },
           "pendingScheduleChange": {
             "type": "boolean"
@@ -1144,7 +1261,12 @@
             "type": "integer"
           }
         },
-        "required": ["id", "token", "startedAt", "revision"]
+        "required": [
+          "id",
+          "token",
+          "startedAt",
+          "revision"
+        ]
       },
       "SubscriptionRequest": {
         "type": "object",
@@ -1160,7 +1282,10 @@
             "$ref": "#/components/schemas/ActivitySession"
           }
         },
-        "required": ["journey", "revision"]
+        "required": [
+          "journey",
+          "revision"
+        ]
       },
       "Subscription": {
         "type": "object",
@@ -1175,7 +1300,11 @@
             "$ref": "#/components/schemas/Journey"
           }
         },
-        "required": ["id", "revision", "journey"]
+        "required": [
+          "id",
+          "revision",
+          "journey"
+        ]
       },
       "TrainEnvelope": {
         "type": "object",
@@ -1188,12 +1317,19 @@
             "type": "integer"
           },
           "sourceFetchedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "sourceStatus": {
             "type": "string",
-            "enum": ["healthy", "stale", "unavailable"]
+            "enum": [
+              "healthy",
+              "stale",
+              "unavailable"
+            ]
           },
           "availableServiceDates": {
             "type": "array",
@@ -1228,10 +1364,14 @@
                 "type": "string"
               }
             },
-            "required": ["code"]
+            "required": [
+              "code"
+            ]
           }
         },
-        "required": ["error"]
+        "required": [
+          "error"
+        ]
       },
       "InstallationRequest": {
         "type": "object",
@@ -1246,23 +1386,38 @@
           },
           "environment": {
             "type": "string",
-            "enum": ["sandbox", "production"]
+            "enum": [
+              "sandbox",
+              "production"
+            ]
           }
         },
-        "required": ["id", "credential", "environment"]
+        "required": [
+          "id",
+          "credential",
+          "environment"
+        ]
       },
       "InstallationPatch": {
         "type": "object",
         "properties": {
           "pushToken": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "environment": {
             "type": "string",
-            "enum": ["sandbox", "production"]
+            "enum": [
+              "sandbox",
+              "production"
+            ]
           }
         },
-        "required": ["environment"]
+        "required": [
+          "environment"
+        ]
       },
       "ActivityState": {
         "type": "object",

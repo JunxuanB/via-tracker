@@ -66,7 +66,6 @@
 		163C8CAC03479FBF3E01C172 /* VIATrackerWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VIATrackerWidgets.swift; sourceTree = "<group>"; };
 		21DD9D6CFC1605C2F1B366F6 /* VIATrackerWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = VIATrackerWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3775F3FCB62C40B80F1E926E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		37C8083FEE7435818B36934E /* TrackerCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TrackerCore; path = ../packages/TrackerCore; sourceTree = SOURCE_ROOT; };
 		4DCEE8E2113812211EA33E17 /* ActivityViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityViews.swift; sourceTree = "<group>"; };
 		524A140B77DC351420F521C4 /* JourneyFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyFlowTests.swift; sourceTree = "<group>"; };
 		557C762D7B35466A3C3E6A52 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
@@ -143,7 +142,6 @@
 			isa = PBXGroup;
 			children = (
 				34FEC7915C62CF051AA58A76 /* App */,
-				B85857AE9F674218785AE195 /* Packages */,
 				C486324E5134F1E1E86D0D43 /* Shared */,
 				32568F011113C25CAED5CF6B /* UITests */,
 				682E8096181FD94399F965FF /* Widgets */,
@@ -159,14 +157,6 @@
 				21DD9D6CFC1605C2F1B366F6 /* VIATrackerWidgets.appex */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		B85857AE9F674218785AE195 /* Packages */ = {
-			isa = PBXGroup;
-			children = (
-				37C8083FEE7435818B36934E /* TrackerCore */,
-			);
-			name = Packages;
 			sourceTree = "<group>";
 		};
 		C486324E5134F1E1E86D0D43 /* Shared */ = {

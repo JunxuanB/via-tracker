@@ -81,7 +81,7 @@ func cases() throws -> [ProjectionCase] {
   j.manualPhase = .riding
   j.advanceLeg()
   #expect(j.currentLegIndex == 1 && j.manualPhase == nil)
-  let state = try #require(Projection.state(j))
+  let state = try #require(Projection.state(j, now: Date(timeIntervalSince1970: 1793991300)))
   #expect(state.phase == .transferring)
   var missingEstimate = j
   missingEstimate.manualPhase = .riding
@@ -112,4 +112,39 @@ func cases() throws -> [ProjectionCase] {
   old.version = 0
   old.calls[2].arrival?.estimated = "2026-11-06T19:00:00-05:00"
   #expect(Projection.reconcile(j, snapshots: [old]) == j)
+}
+
+// Added for the automatic-arrival and multilingual-search changes; not executed in this review.
+@Test func arrivalIsAutomaticAndLateETAStillUpdates() throws {
+  let j = try cases()[3].journey
+  let now = Date(timeIntervalSince1970: 1794008580)
+  #expect(Projection.state(j, now: now)?.phase == .completed)
+  #expect(!j.completed)
+  var delayed = j.legs[0].snapshot
+  delayed.version += 1
+  delayed.calls[2].arrival?.estimated = "2026-11-06T19:00:00-05:00"
+  let refreshed = Projection.reconcile(j, snapshots: [delayed])
+  #expect(Projection.state(refreshed, now: now)?.phase == .riding)
+}
+@Test func searchIgnoresAccentsAndMatchesStationCodes() throws {
+  var train = try cases()[3].journey.legs[0].snapshot
+  train.calls[2].name = "Montréal"
+  train.calls[2].code = "MTRL"
+  let index = TrainSearchIndex(trains: [train])
+  #expect(index.search("Montreal").map(\.id) == [train.id])
+  #expect(index.search("  MONTRÉAL  ").map(\.id) == [train.id])
+  #expect(index.search("mtrl").map(\.id) == [train.id])
+}
+
+@Test func reportedArrivalAtSelectedStationDoesNotWaitForETA() throws {
+  var journey = try cases()[3].journey
+  let index = try #require(journey.legs[0].snapshot.calls.firstIndex {
+    $0.index == journey.legs[0].alightingIndex
+  })
+  let arrival = try #require(journey.legs[0].snapshot.calls[index].arrival?.effectiveDate)
+  journey.legs[0].snapshot.calls[index].reached = true
+  #expect(Projection.state(journey, now: arrival.addingTimeInterval(-600))?.phase == .completed)
+  #expect(journey.completed == false)
+  let reference = try ReferenceSchedule.migrate(journey.legs[0].snapshot, to: "2026-11-07")
+  #expect(reference.calls.allSatisfy { $0.reached == nil })
 }

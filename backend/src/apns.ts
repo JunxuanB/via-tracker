@@ -1,5 +1,7 @@
 import type { ActivityState } from "./domain.ts";
-import { boundedJSON } from "./http.ts";
+import { boundedJSON, sha256 } from "./http.ts";
+// Cache only immutable credential-derived data, never request-bound I/O or promises.
+let providerToken: { fingerprint: string; token: string; expiresAt: number } | undefined;
 const b64 = (a: Uint8Array) =>
   btoa(String.fromCharCode(...a))
     .replace(/=/g, "")
@@ -9,6 +11,10 @@ const encode = (x: unknown) => b64(new TextEncoder().encode(JSON.stringify(x)));
 export async function jwt(env: Env): Promise<string> {
   if (!env.APNS_PRIVATE_KEY || !env.APNS_TEAM_ID || !env.APNS_KEY_ID)
     throw new Error("apns_not_configured");
+  const now = Math.floor(Date.now() / 1000);
+  const fingerprint = await sha256(`${env.APNS_TEAM_ID}:${env.APNS_KEY_ID}:${env.APNS_PRIVATE_KEY}`);
+  if (providerToken?.fingerprint === fingerprint && providerToken.expiresAt > now)
+    return providerToken.token;
   const pem = env.APNS_PRIVATE_KEY.replace(/-----[^-]+-----/g, "").replace(
     /\s/g,
     "",
@@ -20,8 +26,10 @@ export async function jwt(env: Env): Promise<string> {
     false,
     ["sign"],
   );
-  const input = `${encode({ alg: "ES256", kid: env.APNS_KEY_ID })}.${encode({ iss: env.APNS_TEAM_ID, iat: Math.floor(Date.now() / 1000) })}`;
-  return `${input}.${b64(new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(input))))}`;
+  const input = `${encode({ alg: "ES256", kid: env.APNS_KEY_ID })}.${encode({ iss: env.APNS_TEAM_ID, iat: now })}`;
+  const token = `${input}.${b64(new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(input))))}`;
+  providerToken = { fingerprint, token, expiresAt: now + 50 * 60 };
+  return token;
 }
 export async function sendAPNs(
   env: Env,
@@ -56,7 +64,10 @@ export async function sendAPNs(
         body,
       },
     );
-    if (response.ok) return { ok: true, permanent: false };
+    if (response.ok) {
+      await response.body?.cancel();
+      return { ok: true, permanent: false };
+    }
     const error = await boundedJSON(response, 4096).catch(() => ({
       reason: "invalid_response",
     }));

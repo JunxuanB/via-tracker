@@ -13,7 +13,7 @@ private let viaYellow = Color(red: 1, green: 0.8, blue: 0)
 struct JourneyLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: JourneyActivityAttributes.self) { context in
-      ActivitySummary(state: context.state, stale: context.isStale).padding(16)
+      ActivitySummary(state: context.state, stale: context.isStale, testMode: context.attributes.testSource != nil).padding(16)
         .activityBackgroundTint(Color(uiColor: .secondarySystemBackground))
         .activitySystemActionForegroundColor(.primary).widgetURL(
           URL(string: "viatracker://journey/\(context.attributes.journeyID)"))
@@ -24,9 +24,11 @@ struct JourneyLiveActivity: Widget {
             .headline
           ).foregroundStyle(viaYellow)
         }
-        DynamicIslandExpandedRegion(.trailing) { Text(context.state.phase.title).font(.caption) }
+        DynamicIslandExpandedRegion(.trailing) {
+          Text(context.attributes.testSource == nil ? context.state.phase.title : "测试").font(.caption)
+        }
         DynamicIslandExpandedRegion(.bottom) {
-          ActivitySummary(state: context.state, stale: context.isStale).padding(.top, 6)
+          ActivitySummary(state: context.state, stale: context.isStale, testMode: context.attributes.testSource != nil).padding(.top, 6)
         }
       } compactLeading: {
         Image(systemName: context.state.phase.symbol).foregroundStyle(viaYellow)
@@ -43,7 +45,7 @@ struct JourneyLiveActivity: Widget {
     if state.phase == .completed {
       Image(systemName: "checkmark")
     } else if state.waitingForUpdate || state.targetDate <= Date() {
-      Text("待更新").font(.caption)
+      Text(state.elapsedTitle).font(.caption)
     } else {
       Text(timerInterval: Date()...state.targetDate, countsDown: true).monospacedDigit().font(
         .caption
@@ -54,7 +56,8 @@ struct JourneyLiveActivity: Widget {
 struct JourneyProvider: TimelineProvider {
   func placeholder(in context: Context) -> JourneyEntry { JourneyEntry(date: Date(), journey: nil) }
   func getSnapshot(in context: Context, completion: @escaping (JourneyEntry) -> Void) {
-    completion(JourneyEntry(date: Date(), journey: SharedSnapshot.read()?.journey))
+    let cache = SharedSnapshot.read()
+    completion(JourneyEntry(date: Date(), journey: cache?.journey, testMode: cache?.testMode == true))
   }
   func getTimeline(
     in context: Context, completion: @escaping @Sendable (Timeline<JourneyEntry>) -> Void
@@ -62,7 +65,7 @@ struct JourneyProvider: TimelineProvider {
     let cache = SharedSnapshot.read()
     Task {
       var journey = cache?.journey
-      if let cache, let url = URL(string: "/v1/trains", relativeTo: URL(string: cache.apiBaseURL)),
+      if let cache, cache.journey != nil, let url = URL(string: "/v1/trains", relativeTo: URL(string: cache.apiBaseURL)),
         let (data, response) = try? await URLSession.shared.data(
           for: URLRequest(url: url, timeoutInterval: 12)),
         (response as? HTTPURLResponse)?.statusCode == 200,
@@ -72,16 +75,25 @@ struct JourneyProvider: TimelineProvider {
         journey = Projection.reconcile(old, snapshots: envelope.trains)
       }
       let now = Date()
+      // An environment switch can happen while the old timeline's request is still running.
+      let latest = SharedSnapshot.read()
+      if latest?.apiBaseURL != cache?.apiBaseURL {
+        completion(Timeline(entries: [JourneyEntry(date: now, journey: latest?.journey,
+          testMode: latest?.testMode == true)], policy: .after(now.addingTimeInterval(60))))
+        return
+      }
       var dates = [now]
       if let journey, let state = Projection.state(journey) {
-        dates += [
-          journey.plannedLeaveAt, Date(timeIntervalSince1970: state.scheduledEpoch - 900),
-          state.targetDate, Date(timeIntervalSince1970: state.validUntilEpoch),
-        ].filter { $0 > now && $0 < now.addingTimeInterval(86400) }
+        let boundaries = journey.legs.flatMap { leg in
+          [leg.boarding?.departure?.effectiveDate, leg.alighting?.arrival?.effectiveDate].compactMap { $0 }
+        }
+        dates += ([journey.plannedLeaveAt, Date(timeIntervalSince1970: state.scheduledEpoch - 900),
+          state.targetDate, Date(timeIntervalSince1970: state.validUntilEpoch)] + boundaries)
+          .filter { $0 > now && $0 < now.addingTimeInterval(86400) }
       }
       completion(
         Timeline(
-          entries: dates.sorted().map { JourneyEntry(date: $0, journey: journey) },
+          entries: Array(Set(dates)).sorted().map { JourneyEntry(date: $0, journey: journey, testMode: cache?.testMode == true) },
           policy: .after(now.addingTimeInterval(900))))
     }
   }

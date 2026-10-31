@@ -19,10 +19,17 @@ public struct ActivityState: Codable, Hashable, Sendable {
   public var nextDepartureEpoch: Double?
   public var connectionMinutes: Int?
   public var targetDate: Date { Date(timeIntervalSince1970: targetEpoch) }
+  public var elapsedTitle: String {
+    switch phase {
+    case .beforeDeparture: "该出门了"
+    case .onTheWay, .waiting, .transferring: "即将发车"
+    case .riding, .completed: "已到达"
+    }
+  }
   public var countdownLabel: String {
     switch phase {
     case .beforeDeparture: "距计划出门"
-    case .onTheWay: "距官方计划发车"
+    case .onTheWay: "距发车"
     case .waiting: targetIsEstimate ? "距预计发车" : "距计划发车"
     case .riding: "距 \(destination) \(targetIsEstimate ? "预计" : "计划")到达"
     case .transferring: "距下一段计划发车"
@@ -31,7 +38,22 @@ public struct ActivityState: Codable, Hashable, Sendable {
   }
 }
 public enum Projection {
-  public static func state(_ j: Journey, now: Date = Date()) -> ActivityState? {
+  /// Time-driven progress is derived, so a later ETA correction can still update the journey.
+  public static func resolvedJourney(_ journey: Journey, now: Date = Date()) -> Journey {
+    var result = journey
+    while !result.completed, let leg = result.currentLeg {
+      let terminalArrival = leg.source == .official && leg.snapshot.arrived
+        && leg.alightingIndex == leg.snapshot.calls.last?.index
+        && leg.snapshot.calls.last?.departure == nil
+      let arrivalReached = leg.alighting?.arrival?.effectiveDate.map { now >= $0 } ?? false
+      let reportedArrival = leg.source == .official && leg.alighting?.reached == true
+      guard terminalArrival || reportedArrival || arrivalReached else { break }
+      result.advanceLeg()
+    }
+    return result
+  }
+  public static func state(_ journey: Journey, now: Date = Date()) -> ActivityState? {
+    let j = resolvedJourney(journey, now: now)
     guard !j.legs.isEmpty else { return nil }
     let i = min(max(j.currentLegIndex, 0), j.legs.count - 1)
     let l = j.legs[i]
@@ -45,7 +67,7 @@ public enum Projection {
       j.completed
       ? .completed
       : j.manualPhase
-        ?? (i > 0
+        ?? (t >= estDep ? .riding : i > 0
           ? .transferring : t < leave ? .beforeDeparture : t < dep - 900 ? .onTheWay : .waiting)
     let target: Double =
       switch phase {
@@ -60,7 +82,7 @@ public enum Projection {
     return ActivityState(
       phase: phase, trainNumber: l.trainNumber, destination: l.alighting?.name ?? l.alightingCode,
       origin: l.boarding?.name ?? l.boardingCode, targetEpoch: target,
-      scheduledEpoch: phase == .riding || phase == .completed ? arr : dep,
+      scheduledEpoch: phase == .beforeDeparture ? leave : phase == .riding || phase == .completed ? arr : dep,
       sourceFetchedEpoch: fetched, validUntilEpoch: fetched + 600,
       progress: min(1, max(0, (t - estDep) / max(1, estArr - estDep))), currentLegIndex: i,
       legCount: j.legs.count, waitingForUpdate: phase != .completed && t >= target,
@@ -172,6 +194,7 @@ public enum ReferenceSchedule {
         return EventTime(scheduled: Time.iso(repeatedTime == .last ? last : first))
       }
       var c = call
+      c.reached = nil
       c.arrival = try moved(call.arrival)
       c.departure = try moved(call.departure)
       return c

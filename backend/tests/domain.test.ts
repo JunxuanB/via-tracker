@@ -132,3 +132,50 @@ test("malformed events and duplicate station indices rejected", () => {
   j.legs[0].snapshot.calls[1].timeZone = "Invalid/Zone";
   assert.throws(() => validateJourney(j));
 });
+
+test("arrival is automatic without persisting estimated completion", () => {
+  const j = structuredClone(cases[3].journey);
+  const now = 1794008580;
+  assert.equal(project(j, now).phase, "completed");
+  assert.equal(j.completed, false);
+  const delayed = structuredClone(j.legs[0].snapshot);
+  delayed.version++;
+  delayed.calls[2].arrival!.estimated = "2026-11-06T19:00:00-05:00";
+  assert.equal(project(reconcile(j, [delayed]), now).phase, "riding");
+});
+test("subscription validation retains official location and arrival, but strips reference live data", () => {
+  const j = structuredClone(cases[3].journey);
+  j.legs[0].snapshot.arrived = true;
+  j.legs[0].snapshot.position = { latitude: 45.5, longitude: -73.6, reportedAt: "2026-11-06T18:42:00-05:00" };
+  const official = validateJourney(j);
+  assert.equal(official.legs[0].snapshot.arrived, true);
+  assert.deepEqual(official.legs[0].snapshot.position, j.legs[0].snapshot.position);
+  j.legs[0].source = "reference";
+  const reference = validateJourney(j);
+  assert.equal(reference.legs[0].snapshot.arrived, false);
+  assert.equal(reference.legs[0].snapshot.position, undefined);
+  assert.ok(reference.legs[0].snapshot.calls.every(call => !call.arrival?.estimated && !call.departure?.estimated));
+});
+
+test("a selected station marked ARR completes before its ETA without mutating saved progress", () => {
+  const journey = structuredClone(cases[3].journey);
+  const leg = journey.legs[0];
+  const destination = leg.snapshot.calls.find(call => call.index === leg.alightingIndex)!;
+  destination.reached = true;
+  const now = Math.min(Date.parse(destination.arrival!.estimated ?? destination.arrival!.scheduled),
+    Date.parse(destination.arrival!.scheduled)) / 1000 - 600;
+  assert.equal(project(journey, now).phase, "completed");
+  assert.equal(journey.completed, false);
+  leg.source = "reference";
+  const reference = validateJourney(journey);
+  assert.equal(reference.legs[0].snapshot.calls.find(call => call.index === leg.alightingIndex)?.reached, undefined);
+  assert.notEqual(project(reference, now).phase, "completed");
+});
+test("official motion survives subscription validation with no invented actual timestamps", () => {
+  const journey = structuredClone(cases[3].journey);
+  journey.legs[0].snapshot.position = { latitude: 46.9773, longitude: -70.5507,
+    reportedAt: "2026-10-31T03:48:00Z", speedKmh: 31, heading: 56.11 };
+  const saved = validateJourney(journey);
+  assert.deepEqual(saved.legs[0].snapshot.position, journey.legs[0].snapshot.position);
+  assert.ok(saved.legs[0].snapshot.calls.every(call => !("actualArrival" in call)));
+});

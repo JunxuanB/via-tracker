@@ -91,7 +91,17 @@ export async function refresh(env: Env): Promise<void> {
       .run();
   }
 }
-export async function processSubscriptions(env: Env): Promise<void> {
+export interface DeliveryObservation {
+  installationID: string;
+  kind: "activity" | "notification";
+  environment: string;
+  ok: boolean;
+  reason?: string;
+}
+export async function processSubscriptions(env: Env, options?: {
+  force?: boolean;
+  onDelivery?: (delivery: DeliveryObservation) => Promise<void>;
+}): Promise<void> {
   const now = Math.floor(Date.now() / 1000),
     snapshots = await allTrains(env);
   const { results: rows } = await env.DB.prepare(
@@ -100,21 +110,29 @@ export async function processSubscriptions(env: Env): Promise<void> {
     .bind(now)
     .all<SubscriptionRow>();
   // Sequential sends keep the first release below Workers connection limits; each row has its own delivery lease.
-  for (const row of rows) {
+  for (const candidate of rows) {
     const deliveryOwner = crypto.randomUUID();
+    const claimedAt = Math.floor(Date.now() / 1000);
     const claimed = await env.DB.prepare(
       "UPDATE subscriptions SET delivery_lease_until=?,delivery_owner=? WHERE id=? AND revision=? AND delivery_lease_until<?",
     )
-      .bind(now + 55, deliveryOwner, row.id, row.revision, now)
+      .bind(claimedAt + 55, deliveryOwner, candidate.id, candidate.revision, claimedAt)
       .run();
     if (!claimed.meta.changes) continue;
     try {
+      // A previous delivery can update this row without changing its client revision.
+      const row = await env.DB.prepare(
+        "SELECT s.*,i.push_token,i.environment FROM subscriptions s JOIN installations i ON i.id=s.installation_id WHERE s.id=? AND s.delivery_owner=?",
+      ).bind(candidate.id, deliveryOwner).first<SubscriptionRow>();
+      if (!row) continue;
+      const now = Math.floor(Date.now() / 1000);
       const j = reconcile(JSON.parse(row.journey) as Journey, snapshots);
-      await env.DB.prepare(
-        "UPDATE subscriptions SET journey=? WHERE id=? AND revision=?",
+      const updated = await env.DB.prepare(
+        "UPDATE subscriptions SET journey=? WHERE id=? AND revision=? AND delivery_owner=?",
       )
-        .bind(JSON.stringify(j), row.id, row.revision)
+        .bind(JSON.stringify(j), row.id, row.revision, deliveryOwner)
         .run();
+      if (!updated.meta.changes || j.trackingEnded) continue;
       if (
         j.pendingScheduleChange &&
         !row.notification_state &&
@@ -127,8 +145,8 @@ export async function processSubscriptions(env: Env): Promise<void> {
           {
             aps: {
               alert: {
-                title: "列车正式时刻已同步",
-                body: "官方计划与规划时间不同，请打开行程选择是否同步。",
+                title: "发车时间有变化",
+                body: "打开行程，看看是否需要调整出门时间。",
               },
               sound: "default",
             },
@@ -137,26 +155,28 @@ export async function processSubscriptions(env: Env): Promise<void> {
           false,
           10,
         );
+        await options?.onDelivery?.({ installationID: row.installation_id, kind: "notification",
+          environment: row.environment ?? "sandbox", ok: result.ok, reason: result.reason });
         if (result.ok)
           await env.DB.prepare(
-            "UPDATE subscriptions SET notification_state='sent' WHERE id=? AND revision=?",
+            "UPDATE subscriptions SET notification_state='sent' WHERE id=? AND revision=? AND delivery_owner=?",
           )
-            .bind(row.id, row.revision)
+            .bind(row.id, row.revision, deliveryOwner)
             .run();
         else if (result.permanent)
           await env.DB.prepare(
-            "UPDATE installations SET push_token=NULL WHERE id=?",
+            "UPDATE installations SET push_token=NULL WHERE id=? AND push_token=?",
           )
-            .bind(row.installation_id)
+            .bind(row.installation_id, row.push_token)
             .run();
       }
       if (!row.activity || j.trackingEnded) continue;
       const activity = JSON.parse(row.activity) as ActivitySession;
       if (now >= activity.startedAt + 28800) {
         await env.DB.prepare(
-          "UPDATE subscriptions SET activity=NULL WHERE id=? AND revision=?",
+          "UPDATE subscriptions SET activity=NULL WHERE id=? AND revision=? AND activity=? AND delivery_owner=?",
         )
-          .bind(row.id, row.revision)
+          .bind(row.id, row.revision, row.activity, deliveryOwner)
           .run();
         continue;
       }
@@ -164,7 +184,7 @@ export async function processSubscriptions(env: Env): Promise<void> {
         previous = row.last_sent
           ? (JSON.parse(row.last_sent) as ActivityState)
           : undefined;
-      if (!shouldPush(previous, next, row.last_sent_at ?? 0, now)) continue;
+      if (!options?.force && !shouldPush(previous, next, row.last_sent_at ?? 0, now)) continue;
       const timestamp = Math.max(now, row.last_apns_timestamp + 1);
       const reserved = await env.DB.prepare(
         "UPDATE subscriptions SET last_apns_timestamp=? WHERE id=? AND revision=? AND activity=? AND delivery_owner=? AND last_apns_timestamp<?",
@@ -183,29 +203,32 @@ export async function processSubscriptions(env: Env): Promise<void> {
         env,
         activity.token,
         row.environment ?? "sandbox",
-        activityPayload(next, timestamp, j.completed),
+        activityPayload(next, timestamp, next.phase === "completed"),
         true,
-        previous && previous.phase !== next.phase ? 10 : 5,
+        options?.force || (previous && previous.phase !== next.phase) ? 10 : 5,
       );
+      await options?.onDelivery?.({ installationID: row.installation_id, kind: "activity",
+        environment: row.environment ?? "sandbox", ok: delivery.ok, reason: delivery.reason });
       if (delivery.ok)
         await env.DB.prepare(
-          "UPDATE subscriptions SET last_sent=?,last_sent_at=?,last_apns_timestamp=?,activity=CASE WHEN ? THEN NULL ELSE activity END WHERE id=? AND revision=? AND activity=?",
+          "UPDATE subscriptions SET last_sent=?,last_sent_at=?,activity=CASE WHEN ? THEN NULL ELSE activity END WHERE id=? AND revision=? AND activity=? AND delivery_owner=? AND last_apns_timestamp=?",
         )
           .bind(
             JSON.stringify(next),
             now,
-            timestamp,
-            j.completed ? 1 : 0,
+            next.phase === "completed" ? 1 : 0,
             row.id,
             row.revision,
             row.activity,
+            deliveryOwner,
+            timestamp,
           )
           .run();
       else if (delivery.permanent) {
         await env.DB.prepare(
-          "UPDATE subscriptions SET activity=NULL WHERE id=? AND activity=?",
+          "UPDATE subscriptions SET activity=NULL WHERE id=? AND activity=? AND delivery_owner=?",
         )
-          .bind(row.id, row.activity)
+          .bind(row.id, row.activity, deliveryOwner)
           .run();
         console.warn(
           JSON.stringify({
@@ -228,7 +251,7 @@ export async function processSubscriptions(env: Env): Promise<void> {
       await env.DB.prepare(
         "UPDATE subscriptions SET delivery_lease_until=0,delivery_owner=NULL WHERE id=? AND delivery_owner=?",
       )
-        .bind(row.id, deliveryOwner)
+        .bind(candidate.id, deliveryOwner)
         .run();
     }
   }

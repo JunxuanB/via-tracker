@@ -9,14 +9,16 @@
 <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
 <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
 <key>LSRequiresIPhoneOS</key><true/>
-<key>UILaunchScreen</key><dict/>
+<key>UILaunchScreen</key><dict><key>UIColorName</key><string>LaunchBackground</string></dict>
 <key>UIApplicationSceneManifest</key><dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
 <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
 <key>UISupportedInterfaceOrientations~ipad</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationPortraitUpsideDown</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
 <key>NSSupportsLiveActivities</key><true/>
 <key>CFBundleURLTypes</key><array><dict><key>CFBundleURLSchemes</key><array><string>viatracker</string></array></dict></array>
 <key>APIBaseURL</key><string>https://via-tracker-api.junxuan-bao.workers.dev</string>
+<key>TestAPIBaseURL</key><string>https://via-tracker-test.junxuan-bao.workers.dev</string>
 <key>APNSEnvironment</key><string>$(APNS_ENVIRONMENT)</string>
 <key>UIBackgroundModes</key><array><string>remote-notification</string></array>
 <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
+<key>NSLocalNetworkUsageDescription</key><string>连接你在电脑上开启的行程测试台，以预览测试车次和实时活动。</string>
 </dict></plist>

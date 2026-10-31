@@ -4,4 +4,9 @@ assumptions:
   - APNs mock validates caller state preservation and retry behavior, not Apple acceptance or device delivery.
   - The one-port run uses SOURCE_URL and APNS_PROXY_URL overrides; production endpoints remain unchanged.
 scenarios: [healthy, VIA failure, empty VIA response, APNs unavailable, invalid activity token]
-unverified: [physical device delivery, actual eight-hour system expiry]
+unverified:
+  - physical device delivery
+  - actual eight-hour system expiry
+  - 2026-10-30 review changes were not executed, per user request
+  - overlapping subscription writes and token rotation after the lease fixes
+  - automatic arrival and transfer delivery with revised ETAs
