@@ -1,0 +1,72 @@
+{
+  "id": "fixture-journey",
+  "title": "",
+  "createdAt": 1793984400.0,
+  "legs": [
+    {
+      "id": "leg-1",
+      "trainNumber": "44",
+      "originServiceDate": "2026-11-06",
+      "boardingCode": "TRTO",
+      "boardingIndex": 0,
+      "alightingCode": "OTTW",
+      "alightingIndex": 2,
+      "planningDeparture": 1793991600.0,
+      "source": "official",
+      "snapshot": {
+        "id": "44:2026-11-06",
+        "trainNumber": "44",
+        "originServiceDate": "2026-11-06",
+        "rawKey": "44",
+        "from": "TORONTO",
+        "to": "OTTAWA",
+        "departed": true,
+        "arrived": false,
+        "calls": [
+          {
+            "index": 0,
+            "code": "TRTO",
+            "name": "Toronto",
+            "timeZone": "America/Toronto",
+            "departure": {
+              "scheduled": "2026-11-06T14:00:00-05:00"
+            }
+          },
+          {
+            "index": 1,
+            "code": "KGON",
+            "name": "Kingston",
+            "timeZone": "America/Toronto",
+            "departure": {
+              "scheduled": "2026-11-06T16:22:00-05:00"
+            },
+            "arrival": {
+              "scheduled": "2026-11-06T16:20:00-05:00"
+            }
+          },
+          {
+            "index": 2,
+            "code": "OTTW",
+            "name": "Ottawa",
+            "timeZone": "America/Toronto",
+            "arrival": {
+              "scheduled": "2026-11-06T18:30:00-05:00",
+              "estimated": "2026-11-06T18:42:00-05:00"
+            }
+          }
+        ],
+        "sourceFetchedAt": "2026-11-06T22:24:00Z",
+        "version": 1,
+        "alerts": []
+      }
+    }
+  ],
+  "travelToStationMinutes": 30,
+  "currentLegIndex": 0,
+  "completed": false,
+  "trackingEnded": false,
+  "syncChoice": "ask",
+  "pendingScheduleChange": false,
+  "scheduleChangePrompted": false,
+  "manualPhase": "riding"
+}

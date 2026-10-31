@@ -1,0 +1,211 @@
+export type Phase =
+  | "beforeDeparture"
+  | "onTheWay"
+  | "waiting"
+  | "riding"
+  | "transferring"
+  | "completed";
+export interface EventTime {
+  scheduled: string;
+  estimated?: string;
+}
+export interface StationCall {
+  index: number;
+  code: string;
+  name: string;
+  timeZone: string;
+  arrival?: EventTime;
+  departure?: EventTime;
+}
+export interface TrainSnapshot {
+  id: string;
+  trainNumber: string;
+  originServiceDate: string;
+  rawKey: string;
+  from: string;
+  to: string;
+  departed: boolean;
+  arrived: boolean;
+  calls: StationCall[];
+  sourceFetchedAt: string;
+  version: number;
+  position?: { latitude: number; longitude: number; reportedAt?: string };
+  alerts: { title: string; body: string; url?: string }[];
+  qualityFlags?: string[];
+}
+export interface TrainLeg {
+  id: string;
+  trainNumber: string;
+  originServiceDate: string;
+  boardingCode: string;
+  boardingIndex: number;
+  alightingCode: string;
+  alightingIndex: number;
+  planningDeparture: number;
+  source: "official" | "reference";
+  referenceInstanceID?: string;
+  snapshot: TrainSnapshot;
+}
+export interface Journey {
+  id: string;
+  title: string;
+  createdAt: number;
+  legs: TrainLeg[];
+  travelToStationMinutes: number;
+  currentLegIndex: number;
+  manualPhase?: Phase;
+  completed: boolean;
+  trackingEnded: boolean;
+  syncChoice: "ask" | "keep" | "automatic";
+  pendingScheduleChange: boolean;
+  scheduleChangePrompted: boolean;
+}
+export interface ActivityState {
+  phase: Phase;
+  trainNumber: string;
+  destination: string;
+  origin: string;
+  targetEpoch: number;
+  scheduledEpoch: number;
+  sourceFetchedEpoch: number;
+  validUntilEpoch: number;
+  progress: number;
+  currentLegIndex: number;
+  legCount: number;
+  waitingForUpdate: boolean;
+  reference: boolean;
+  targetIsEstimate: boolean;
+  nextTrainNumber?: string;
+  nextDepartureEpoch?: number;
+  connectionMinutes?: number;
+}
+export const epoch = (s?: string) =>
+  s && Number.isFinite(Date.parse(s)) ? Date.parse(s) / 1000 : undefined;
+export function stations(leg: TrainLeg) {
+  return {
+    boarding: leg.snapshot.calls.find(
+      (s) => s.index === leg.boardingIndex && s.code === leg.boardingCode,
+    ),
+    alighting: leg.snapshot.calls.find(
+      (s) => s.index === leg.alightingIndex && s.code === leg.alightingCode,
+    ),
+  };
+}
+export function project(j: Journey, now: number): ActivityState {
+  const i = Math.min(Math.max(j.currentLegIndex, 0), j.legs.length - 1),
+    leg = j.legs[i];
+  if (!leg) throw new Error("empty_journey");
+  const { boarding: b, alighting: a } = stations(leg);
+  const dep = epoch(b?.departure?.scheduled) ?? leg.planningDeparture;
+  const estDep = epoch(b?.departure?.estimated) ?? dep;
+  const arr = epoch(a?.arrival?.scheduled) ?? dep;
+  const estArr = epoch(a?.arrival?.estimated) ?? arr;
+  const leave = j.legs[0].planningDeparture - j.travelToStationMinutes * 60;
+  let phase: Phase = j.completed
+    ? "completed"
+    : (j.manualPhase ??
+      (i > 0
+        ? "transferring"
+        : now < leave
+          ? "beforeDeparture"
+          : now < dep - 900
+            ? "onTheWay"
+            : "waiting"));
+  // Whole-train flags are deliberately not evidence for a selected station event.
+  const target =
+    phase === "beforeDeparture"
+      ? leave
+      : phase === "onTheWay" || phase === "transferring"
+        ? dep
+        : phase === "waiting"
+          ? estDep
+          : estArr;
+  const sourceFetchedEpoch = epoch(leg.snapshot.sourceFetchedAt) ?? 0;
+  const next = j.legs[i + 1],
+    nextDepartureEpoch = next
+      ? epoch(stations(next).boarding?.departure?.scheduled)
+      : undefined;
+  return {
+    phase,
+    trainNumber: leg.trainNumber,
+    destination: a?.name ?? leg.alightingCode,
+    origin: b?.name ?? leg.boardingCode,
+    targetEpoch: target,
+    scheduledEpoch: phase === "riding" || phase === "completed" ? arr : dep,
+    sourceFetchedEpoch,
+    validUntilEpoch: sourceFetchedEpoch + 600,
+    progress: Math.min(
+      1,
+      Math.max(0, (now - estDep) / Math.max(1, estArr - estDep)),
+    ),
+    currentLegIndex: i,
+    legCount: j.legs.length,
+    waitingForUpdate: phase !== "completed" && now >= target,
+    reference: leg.source === "reference",
+    targetIsEstimate:
+      phase === "riding"
+        ? epoch(a?.arrival?.estimated) !== undefined
+        : phase === "waiting" && epoch(b?.departure?.estimated) !== undefined,
+    ...(next ? { nextTrainNumber: next.trainNumber } : {}),
+    ...(nextDepartureEpoch !== undefined
+      ? {
+          nextDepartureEpoch,
+          connectionMinutes: Math.trunc((nextDepartureEpoch - estArr) / 60),
+        }
+      : {}),
+  };
+}
+export function shouldPush(
+  previous: ActivityState | undefined,
+  next: ActivityState,
+  lastSentAt: number,
+  now: number,
+) {
+  return (
+    !previous ||
+    previous.phase !== next.phase ||
+    previous.currentLegIndex !== next.currentLegIndex ||
+    previous.waitingForUpdate !== next.waitingForUpdate ||
+    Math.abs(previous.targetEpoch - next.targetEpoch) >= 60 ||
+    previous.nextDepartureEpoch !== next.nextDepartureEpoch ||
+    previous.reference !== next.reference ||
+    now - lastSentAt >= 300
+  );
+}
+export function reconcile(j: Journey, snapshots: TrainSnapshot[]): Journey {
+  const copy: Journey = structuredClone(j);
+  for (const leg of copy.legs) {
+    const latest = snapshots.find(
+      (s) =>
+        s.trainNumber === leg.trainNumber &&
+        s.originServiceDate === leg.originServiceDate,
+    );
+    if (!latest || latest.version < leg.snapshot.version) continue;
+    const boarding = latest.calls.find(
+      (s) => s.code === leg.boardingCode && s.index === leg.boardingIndex,
+    );
+    const alighting = latest.calls.find(
+      (s) => s.code === leg.alightingCode && s.index === leg.alightingIndex,
+    );
+    if (
+      !boarding?.departure ||
+      !alighting?.arrival ||
+      boarding.index >= alighting.index
+    )
+      continue;
+    const official = epoch(boarding.departure.scheduled)!;
+    const wasReference = leg.source === "reference";
+    leg.snapshot = latest;
+    leg.source = "official";
+    if (copy.syncChoice === "automatic") leg.planningDeparture = official;
+    else if (
+      wasReference &&
+      Math.abs(official - leg.planningDeparture) >= 1 &&
+      !copy.scheduleChangePrompted
+    ) {
+      copy.pendingScheduleChange = true;
+      copy.scheduleChangePrompted = true;
+    }
+  }
+  return copy;
+}

@@ -1,0 +1,26 @@
+{
+  "name": "via-tracker-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --test-scheduled",
+    "check": "tsc --noEmit",
+    "types": "wrangler types",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 migrations apply via-tracker --local",
+    "db:remote": "wrangler d1 migrations apply via-tracker --remote"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.1.0",
+    "@cloudflare/workers-types": "latest",
+    "@types/node": "^26.0.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "prettier": "^3.9.10",
+    "tsx": "latest",
+    "typescript": "latest",
+    "wrangler": "^4.129.0"
+  }
+}

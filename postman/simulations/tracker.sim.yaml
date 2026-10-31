@@ -1,0 +1,11 @@
+simulation: tracker-dependencies
+routing: path
+mocks:
+  - name: via
+    routeKey: via
+    origin: [tsimobile.viarail.ca]
+    path: postman/mocks/via
+  - name: apns
+    routeKey: apns
+    origin: [api.sandbox.push.apple.com, api.push.apple.com]
+    path: postman/mocks/apns

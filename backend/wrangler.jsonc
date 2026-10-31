@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "via-tracker-api", "main": "src/index.ts", "compatibility_date": "2026-10-30",
+  "workers_dev": true, "observability": {"enabled": true},
+  "triggers": {"crons": ["* * * * *"]},
+  "vars": {"SOURCE_URL": "https://tsimobile.viarail.ca/data/allData.json", "APNS_BUNDLE_ID": "com.junxuanb.viatracker"},
+  "d1_databases": [{"binding":"DB","database_name":"via-tracker","database_id":"79096f0b-9602-486a-8b78-790ed4b83f9d","migrations_dir":"migrations"}],
+  "unsafe": {"bindings": [
+    {"name":"INSTALLATION_LIMITER","type":"ratelimit","namespace_id":"1001","simple":{"limit":10,"period":60}},
+    {"name":"WRITE_LIMITER","type":"ratelimit","namespace_id":"1002","simple":{"limit":60,"period":60}}
+  ]}
+}

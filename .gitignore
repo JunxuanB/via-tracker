@@ -1,0 +1,17 @@
+tmp/
+.DS_Store
+node_modules/
+.wrangler/
+.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.dev.vars*
+.env*
+!.env.example
+build/
+*.ipa
+*.xcarchive
+*.p8
+*.p12
+*.mobileprovision

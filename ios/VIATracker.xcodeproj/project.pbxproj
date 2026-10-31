@@ -1,0 +1,664 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		14F98C118FF086A53703FD03 /* VIATrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EFC7B7C8A5CBA8F0B69883F /* VIATrackerApp.swift */; };
+		33A7715CE8F787F1F5BCB1C0 /* SystemComponentGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63F05BA353E03E232E5C0398 /* SystemComponentGallery.swift */; };
+		4002D0366B65761E4555A50D /* VIATrackerWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 21DD9D6CFC1605C2F1B366F6 /* VIATrackerWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4497399BE6162880A7C650FB /* JourneyDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567946FEF130A2ADFDBD9EFA /* JourneyDetail.swift */; };
+		4F590A56B51AA32242DBAFD7 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17BEFF6CFD0D83694E62A07 /* AppStore.swift */; };
+		5CBC363F3F1475B238096770 /* PreviewScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB12AA44B4B6C08577819E74 /* PreviewScenarios.swift */; };
+		651C2A817752FE62D7893E04 /* JourneyFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524A140B77DC351420F521C4 /* JourneyFlowTests.swift */; };
+		6DF91F34EDF9FEFA93F7E2AA /* ActivityViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DCEE8E2113812211EA33E17 /* ActivityViews.swift */; };
+		8D0FFE1A84FE8FE393C9EFEE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DA7AFD9E1C85158677A2ABC0 /* PrivacyInfo.xcprivacy */; };
+		8E919B29E613CA9977643416 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDFE855CD09338E07BCB96C8 /* SettingsView.swift */; };
+		B33E024FD61E5F3428EA2492 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3775F3FCB62C40B80F1E926E /* RootView.swift */; };
+		B3FBC6DB471E9AF4597B162A /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C42A354E1DCC9C87FFFA07 /* APIClient.swift */; };
+		BE8AC4B6C84D570B096BB354 /* VIATrackerWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163C8CAC03479FBF3E01C172 /* VIATrackerWidgets.swift */; };
+		C6DF83AB6F5B722A6C7227FE /* TrackerCore in Frameworks */ = {isa = PBXBuildFile; productRef = 375D4A3A3EC9FFDDEAF4E04C /* TrackerCore */; };
+		CCAE63CF25F0B1ECA2D1EB73 /* TrackerCore in Frameworks */ = {isa = PBXBuildFile; productRef = 57CFCBCFAB4F044A45ADFD66 /* TrackerCore */; };
+		D1EA51E5B6BEAB6ECAFC73B3 /* ActivityViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DCEE8E2113812211EA33E17 /* ActivityViews.swift */; };
+		DD487984E5ED96B171982EB4 /* ActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C672ECFDB06EBECFFA52355E /* ActivityManager.swift */; };
+		DEC6642B901C949FF13F3400 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93B03FE8423B6B202113746E /* Assets.xcassets */; };
+		DF4763BF505F6EB7E7EEAA8F /* AddJourneyFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8C4B602A7DC6D8DF28AF3B /* AddJourneyFlow.swift */; };
+		EB8A7DA1D980943F91814A2D /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557C762D7B35466A3C3E6A52 /* DesignSystem.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2C7151E78BA61120DD1F650B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E0155E9E2BB2869AE620A954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 93D4ED21225222C7549F50AC;
+			remoteInfo = VIATracker;
+		};
+		4E6602648E2F5487635E81B3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E0155E9E2BB2869AE620A954 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D1039E148FF88CFD938CA700;
+			remoteInfo = VIATrackerWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CCE1202F4CAAFD48E6FBD32D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4002D0366B65761E4555A50D /* VIATrackerWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		09C42A354E1DCC9C87FFFA07 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		139A7ED28ECBDE01259229F7 /* VIATracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VIATracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		163C8CAC03479FBF3E01C172 /* VIATrackerWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VIATrackerWidgets.swift; sourceTree = "<group>"; };
+		21DD9D6CFC1605C2F1B366F6 /* VIATrackerWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = VIATrackerWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3775F3FCB62C40B80F1E926E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		37C8083FEE7435818B36934E /* TrackerCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TrackerCore; path = ../packages/TrackerCore; sourceTree = SOURCE_ROOT; };
+		4DCEE8E2113812211EA33E17 /* ActivityViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityViews.swift; sourceTree = "<group>"; };
+		524A140B77DC351420F521C4 /* JourneyFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyFlowTests.swift; sourceTree = "<group>"; };
+		557C762D7B35466A3C3E6A52 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		567946FEF130A2ADFDBD9EFA /* JourneyDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyDetail.swift; sourceTree = "<group>"; };
+		5EFC7B7C8A5CBA8F0B69883F /* VIATrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VIATrackerApp.swift; sourceTree = "<group>"; };
+		63F05BA353E03E232E5C0398 /* SystemComponentGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemComponentGallery.swift; sourceTree = "<group>"; };
+		7C8C4B602A7DC6D8DF28AF3B /* AddJourneyFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddJourneyFlow.swift; sourceTree = "<group>"; };
+		93B03FE8423B6B202113746E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BDFE855CD09338E07BCB96C8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		C0418E878AA5C888D1D395CF /* VIATrackerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VIATrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C17BEFF6CFD0D83694E62A07 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		C672ECFDB06EBECFFA52355E /* ActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityManager.swift; sourceTree = "<group>"; };
+		DA7AFD9E1C85158677A2ABC0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		DB12AA44B4B6C08577819E74 /* PreviewScenarios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewScenarios.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8CBC8B9A486916F2A8D50EAB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CCAE63CF25F0B1ECA2D1EB73 /* TrackerCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		92619479E6F2B726EDB2721B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C6DF83AB6F5B722A6C7227FE /* TrackerCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		32568F011113C25CAED5CF6B /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				524A140B77DC351420F521C4 /* JourneyFlowTests.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
+		34FEC7915C62CF051AA58A76 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				C672ECFDB06EBECFFA52355E /* ActivityManager.swift */,
+				7C8C4B602A7DC6D8DF28AF3B /* AddJourneyFlow.swift */,
+				09C42A354E1DCC9C87FFFA07 /* APIClient.swift */,
+				C17BEFF6CFD0D83694E62A07 /* AppStore.swift */,
+				93B03FE8423B6B202113746E /* Assets.xcassets */,
+				557C762D7B35466A3C3E6A52 /* DesignSystem.swift */,
+				567946FEF130A2ADFDBD9EFA /* JourneyDetail.swift */,
+				DB12AA44B4B6C08577819E74 /* PreviewScenarios.swift */,
+				DA7AFD9E1C85158677A2ABC0 /* PrivacyInfo.xcprivacy */,
+				3775F3FCB62C40B80F1E926E /* RootView.swift */,
+				BDFE855CD09338E07BCB96C8 /* SettingsView.swift */,
+				63F05BA353E03E232E5C0398 /* SystemComponentGallery.swift */,
+				5EFC7B7C8A5CBA8F0B69883F /* VIATrackerApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		682E8096181FD94399F965FF /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				163C8CAC03479FBF3E01C172 /* VIATrackerWidgets.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
+		6A438EE112AF8B4B3CC32F93 = {
+			isa = PBXGroup;
+			children = (
+				34FEC7915C62CF051AA58A76 /* App */,
+				B85857AE9F674218785AE195 /* Packages */,
+				C486324E5134F1E1E86D0D43 /* Shared */,
+				32568F011113C25CAED5CF6B /* UITests */,
+				682E8096181FD94399F965FF /* Widgets */,
+				84A0A1AB7F2C705220959EC6 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		84A0A1AB7F2C705220959EC6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				139A7ED28ECBDE01259229F7 /* VIATracker.app */,
+				C0418E878AA5C888D1D395CF /* VIATrackerUITests.xctest */,
+				21DD9D6CFC1605C2F1B366F6 /* VIATrackerWidgets.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B85857AE9F674218785AE195 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				37C8083FEE7435818B36934E /* TrackerCore */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		C486324E5134F1E1E86D0D43 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				4DCEE8E2113812211EA33E17 /* ActivityViews.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0B4B4E6308B8DEA39ED978BD /* VIATrackerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC2B4D501DCE90DCD7A05E92 /* Build configuration list for PBXNativeTarget "VIATrackerUITests" */;
+			buildPhases = (
+				F44FA4E5DA7D835B003B4912 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				184E8C2185A902194E529E1F /* PBXTargetDependency */,
+			);
+			name = VIATrackerUITests;
+			packageProductDependencies = (
+			);
+			productName = VIATrackerUITests;
+			productReference = C0418E878AA5C888D1D395CF /* VIATrackerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		93D4ED21225222C7549F50AC /* VIATracker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 778465249B6CBD262FEB6533 /* Build configuration list for PBXNativeTarget "VIATracker" */;
+			buildPhases = (
+				8AF18218A454D72474350731 /* Sources */,
+				01AC4B3202D7BEA108D0B170 /* Resources */,
+				92619479E6F2B726EDB2721B /* Frameworks */,
+				CCE1202F4CAAFD48E6FBD32D /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0A947BBCC349AD468D03FA1B /* PBXTargetDependency */,
+			);
+			name = VIATracker;
+			packageProductDependencies = (
+				375D4A3A3EC9FFDDEAF4E04C /* TrackerCore */,
+			);
+			productName = VIATracker;
+			productReference = 139A7ED28ECBDE01259229F7 /* VIATracker.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D1039E148FF88CFD938CA700 /* VIATrackerWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BBDCA85B3A4F8AF9802C28F1 /* Build configuration list for PBXNativeTarget "VIATrackerWidgets" */;
+			buildPhases = (
+				5889647428387DE53307416D /* Sources */,
+				8CBC8B9A486916F2A8D50EAB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VIATrackerWidgets;
+			packageProductDependencies = (
+				57CFCBCFAB4F044A45ADFD66 /* TrackerCore */,
+			);
+			productName = VIATrackerWidgets;
+			productReference = 21DD9D6CFC1605C2F1B366F6 /* VIATrackerWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E0155E9E2BB2869AE620A954 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					0B4B4E6308B8DEA39ED978BD = {
+						DevelopmentTeam = 85SV63Z4H5;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 93D4ED21225222C7549F50AC;
+					};
+					93D4ED21225222C7549F50AC = {
+						DevelopmentTeam = 85SV63Z4H5;
+						ProvisioningStyle = Automatic;
+					};
+					D1039E148FF88CFD938CA700 = {
+						DevelopmentTeam = 85SV63Z4H5;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = B7AFB10E9EACC5D05D1EF9D7 /* Build configuration list for PBXProject "VIATracker" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 6A438EE112AF8B4B3CC32F93;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3D793D0F13F6239C7067EC4B /* XCLocalSwiftPackageReference "../packages/TrackerCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 84A0A1AB7F2C705220959EC6 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				93D4ED21225222C7549F50AC /* VIATracker */,
+				D1039E148FF88CFD938CA700 /* VIATrackerWidgets */,
+				0B4B4E6308B8DEA39ED978BD /* VIATrackerUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		01AC4B3202D7BEA108D0B170 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DEC6642B901C949FF13F3400 /* Assets.xcassets in Resources */,
+				8D0FFE1A84FE8FE393C9EFEE /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5889647428387DE53307416D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D1EA51E5B6BEAB6ECAFC73B3 /* ActivityViews.swift in Sources */,
+				BE8AC4B6C84D570B096BB354 /* VIATrackerWidgets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8AF18218A454D72474350731 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B3FBC6DB471E9AF4597B162A /* APIClient.swift in Sources */,
+				DD487984E5ED96B171982EB4 /* ActivityManager.swift in Sources */,
+				6DF91F34EDF9FEFA93F7E2AA /* ActivityViews.swift in Sources */,
+				DF4763BF505F6EB7E7EEAA8F /* AddJourneyFlow.swift in Sources */,
+				4F590A56B51AA32242DBAFD7 /* AppStore.swift in Sources */,
+				EB8A7DA1D980943F91814A2D /* DesignSystem.swift in Sources */,
+				4497399BE6162880A7C650FB /* JourneyDetail.swift in Sources */,
+				5CBC363F3F1475B238096770 /* PreviewScenarios.swift in Sources */,
+				B33E024FD61E5F3428EA2492 /* RootView.swift in Sources */,
+				8E919B29E613CA9977643416 /* SettingsView.swift in Sources */,
+				33A7715CE8F787F1F5BCB1C0 /* SystemComponentGallery.swift in Sources */,
+				14F98C118FF086A53703FD03 /* VIATrackerApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F44FA4E5DA7D835B003B4912 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				651C2A817752FE62D7893E04 /* JourneyFlowTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0A947BBCC349AD468D03FA1B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D1039E148FF88CFD938CA700 /* VIATrackerWidgets */;
+			targetProxy = 4E6602648E2F5487635E81B3 /* PBXContainerItemProxy */;
+		};
+		184E8C2185A902194E529E1F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 93D4ED21225222C7549F50AC /* VIATracker */;
+			targetProxy = 2C7151E78BA61120DD1F650B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		065756581ECB15B4BEC2839B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 85SV63Z4H5;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		23AE20F2B9093057A87F8D80 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APNS_ENVIRONMENT = production;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Configuration/App.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = "Configuration/App-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.junxuanb.viatracker;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		346928E5840C3E15D723AA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_ENTITLEMENTS = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.junxuanb.viatracker.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = VIATracker;
+			};
+			name = Release;
+		};
+		7841E529E3C5E3E7569955BC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_ENTITLEMENTS = Configuration/Widgets.entitlements;
+				INFOPLIST_FILE = "Configuration/Widgets-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.junxuanb.viatracker.widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		8690029086C7FC0296F5AA5A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_ENTITLEMENTS = Configuration/Widgets.entitlements;
+				INFOPLIST_FILE = "Configuration/Widgets-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.junxuanb.viatracker.widgets;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9061691B11855B4F2F3F1A33 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_ENTITLEMENTS = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.junxuanb.viatracker.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = VIATracker;
+			};
+			name = Debug;
+		};
+		A61787704144B2B183290B22 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 85SV63Z4H5;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		DBFF3C455CD2E9A84DBBDE9B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APNS_ENVIRONMENT = development;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Configuration/App.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = "Configuration/App-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.junxuanb.viatracker;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		778465249B6CBD262FEB6533 /* Build configuration list for PBXNativeTarget "VIATracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DBFF3C455CD2E9A84DBBDE9B /* Debug */,
+				23AE20F2B9093057A87F8D80 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B7AFB10E9EACC5D05D1EF9D7 /* Build configuration list for PBXProject "VIATracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				065756581ECB15B4BEC2839B /* Debug */,
+				A61787704144B2B183290B22 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BBDCA85B3A4F8AF9802C28F1 /* Build configuration list for PBXNativeTarget "VIATrackerWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8690029086C7FC0296F5AA5A /* Debug */,
+				7841E529E3C5E3E7569955BC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CC2B4D501DCE90DCD7A05E92 /* Build configuration list for PBXNativeTarget "VIATrackerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9061691B11855B4F2F3F1A33 /* Debug */,
+				346928E5840C3E15D723AA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		3D793D0F13F6239C7067EC4B /* XCLocalSwiftPackageReference "../packages/TrackerCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../packages/TrackerCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		375D4A3A3EC9FFDDEAF4E04C /* TrackerCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TrackerCore;
+		};
+		57CFCBCFAB4F044A45ADFD66 /* TrackerCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TrackerCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E0155E9E2BB2869AE620A954 /* Project object */;
+}

@@ -1,0 +1,9 @@
+version: 1
+name: via-observation
+slug: via-observation
+protocol: http
+interceptRequests: true
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true

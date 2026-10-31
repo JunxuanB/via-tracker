@@ -1,0 +1,7 @@
+assumptions:
+  - VIA responds with the public observation fixture captured on 2026-10-30 America/Toronto.
+  - VIA fields have no formal schema or station actual-event guarantee.
+  - APNs mock validates caller state preservation and retry behavior, not Apple acceptance or device delivery.
+  - The one-port run uses SOURCE_URL and APNS_PROXY_URL overrides; production endpoints remain unchanged.
+scenarios: [healthy, VIA failure, empty VIA response, APNs unavailable, invalid activity token]
+unverified: [physical device delivery, actual eight-hour system expiry]

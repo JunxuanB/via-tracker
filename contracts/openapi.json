@@ -1,0 +1,1342 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VIA Tracker API",
+    "version": "1.0.0",
+    "description": "No account. Bearer value is installationID:credential. Times use ISO8601 with offsets; planning and ActivityState timestamps are Unix seconds. Ordinary and activity tokens are separate. Snapshot and client revision are separate dimensions. Upstream fields are observations, not a VIA guarantee."
+  },
+  "servers": [
+    {
+      "url": "https://via-tracker-api.junxuan-bao.workers.dev"
+    },
+    {
+      "url": "http://127.0.0.1:8787"
+    }
+  ],
+  "security": [
+    {
+      "installation": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Service availability",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "schemaVersion": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["status", "schemaVersion"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid installation credential",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Older client revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure; retry with backoff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/trains": {
+      "get": {
+        "summary": "Cached normalized trains; missing instances are not cancellation evidence",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid installation credential",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Older client revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure; retry with backoff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "ETag unchanged; preserve cached body"
+          }
+        },
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Train number or available station name"
+          },
+          {
+            "name": "originServiceDate",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Origin service date YYYY-MM-DD; not intermediate boarding date"
+          }
+        ]
+      }
+    },
+    "/v1/trains/{instanceId}": {
+      "get": {
+        "summary": "One train in an envelope; identity is number:originServiceDate",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainEnvelope"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid installation credential",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Older client revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure; retry with backoff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      },
+      "parameters": [
+        {
+          "name": "instanceId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "/v1/installations": {
+      "post": {
+        "summary": "Idempotently register a device-generated installation credential",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid installation credential",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Older client revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure; retry with backoff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallationRequest"
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Replace ordinary notification token or clear it with null",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid installation credential",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Older client revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure; retry with backoff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallationPatch"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subscriptions": {
+      "get": {
+        "summary": "List only this installation’s subscriptions",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "subscriptions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Subscription"
+                      }
+                    }
+                  },
+                  "required": ["subscriptions"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid installation credential",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Older client revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure; retry with backoff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create or replace a journey subscription; revisions increase monotonically",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid installation credential",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Older client revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure; retry with backoff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Updated or idempotent retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subscriptions/{id}": {
+      "patch": {
+        "summary": "Replace the subscription at a newer revision; omit activity to stop remote updates",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Subscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid installation credential",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Older client revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure; retry with backoff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionRequest"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Idempotently remove this installation’s subscription",
+        "responses": {
+          "204": {
+            "description": "Removed or already absent"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "installation": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "installationID:64-character device credential"
+      }
+    },
+    "schemas": {
+      "EventTime": {
+        "type": "object",
+        "properties": {
+          "scheduled": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estimated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["scheduled"]
+      },
+      "StationCall": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "arrival": {
+            "$ref": "#/components/schemas/EventTime"
+          },
+          "departure": {
+            "$ref": "#/components/schemas/EventTime"
+          }
+        },
+        "required": ["index", "code", "name", "timeZone"]
+      },
+      "Position": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "reportedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["latitude", "longitude"]
+      },
+      "Alert": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": ["title", "body"]
+      },
+      "TrainSnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "trainNumber": {
+            "type": "string"
+          },
+          "originServiceDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "rawKey": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "departed": {
+            "type": "boolean"
+          },
+          "arrived": {
+            "type": "boolean"
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StationCall"
+            }
+          },
+          "sourceFetchedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            }
+          },
+          "qualityFlags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Conservative normalization quality markers, including unverified station actual events."
+          }
+        },
+        "required": [
+          "id",
+          "trainNumber",
+          "originServiceDate",
+          "rawKey",
+          "from",
+          "to",
+          "departed",
+          "arrived",
+          "calls",
+          "sourceFetchedAt",
+          "version",
+          "alerts"
+        ]
+      },
+      "TrainLeg": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "trainNumber": {
+            "type": "string"
+          },
+          "originServiceDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "boardingCode": {
+            "type": "string"
+          },
+          "boardingIndex": {
+            "type": "integer"
+          },
+          "alightingCode": {
+            "type": "string"
+          },
+          "alightingIndex": {
+            "type": "integer"
+          },
+          "planningDeparture": {
+            "type": "number",
+            "description": "Unix epoch seconds; user planning only"
+          },
+          "source": {
+            "type": "string",
+            "enum": ["official", "reference"]
+          },
+          "referenceInstanceID": {
+            "type": "string"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/TrainSnapshot"
+          }
+        },
+        "required": [
+          "id",
+          "trainNumber",
+          "originServiceDate",
+          "boardingCode",
+          "boardingIndex",
+          "alightingCode",
+          "alightingIndex",
+          "planningDeparture",
+          "source",
+          "snapshot"
+        ]
+      },
+      "Phase": {
+        "type": "string",
+        "enum": [
+          "beforeDeparture",
+          "onTheWay",
+          "waiting",
+          "riding",
+          "transferring",
+          "completed"
+        ]
+      },
+      "Journey": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "number"
+          },
+          "legs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrainLeg"
+            },
+            "minItems": 1,
+            "maxItems": 16
+          },
+          "travelToStationMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1440,
+            "multipleOf": 15
+          },
+          "currentLegIndex": {
+            "type": "integer"
+          },
+          "manualPhase": {
+            "$ref": "#/components/schemas/Phase"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "trackingEnded": {
+            "type": "boolean"
+          },
+          "syncChoice": {
+            "type": "string",
+            "enum": ["ask", "keep", "automatic"]
+          },
+          "pendingScheduleChange": {
+            "type": "boolean"
+          },
+          "scheduleChangePrompted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdAt",
+          "legs",
+          "travelToStationMinutes",
+          "currentLegIndex",
+          "completed",
+          "trackingEnded",
+          "syncChoice",
+          "pendingScheduleChange",
+          "scheduleChangePrompted"
+        ]
+      },
+      "ActivitySession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{32,512}$"
+          },
+          "startedAt": {
+            "type": "integer"
+          },
+          "revision": {
+            "type": "integer"
+          }
+        },
+        "required": ["id", "token", "startedAt", "revision"]
+      },
+      "SubscriptionRequest": {
+        "type": "object",
+        "properties": {
+          "journey": {
+            "$ref": "#/components/schemas/Journey"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "activity": {
+            "$ref": "#/components/schemas/ActivitySession"
+          }
+        },
+        "required": ["journey", "revision"]
+      },
+      "Subscription": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "journey": {
+            "$ref": "#/components/schemas/Journey"
+          }
+        },
+        "required": ["id", "revision", "journey"]
+      },
+      "TrainEnvelope": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "snapshotVersion": {
+            "type": "integer"
+          },
+          "sourceFetchedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "sourceStatus": {
+            "type": "string",
+            "enum": ["healthy", "stale", "unavailable"]
+          },
+          "availableServiceDates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "trains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrainSnapshot"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "snapshotVersion",
+          "sourceFetchedAt",
+          "sourceStatus",
+          "availableServiceDates",
+          "trains"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              }
+            },
+            "required": ["code"]
+          }
+        },
+        "required": ["error"]
+      },
+      "InstallationRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "credential": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "environment": {
+            "type": "string",
+            "enum": ["sandbox", "production"]
+          }
+        },
+        "required": ["id", "credential", "environment"]
+      },
+      "InstallationPatch": {
+        "type": "object",
+        "properties": {
+          "pushToken": {
+            "type": ["string", "null"]
+          },
+          "environment": {
+            "type": "string",
+            "enum": ["sandbox", "production"]
+          }
+        },
+        "required": ["environment"]
+      },
+      "ActivityState": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "$ref": "#/components/schemas/Phase"
+          },
+          "trainNumber": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "targetEpoch": {
+            "type": "number"
+          },
+          "scheduledEpoch": {
+            "type": "number"
+          },
+          "sourceFetchedEpoch": {
+            "type": "number"
+          },
+          "validUntilEpoch": {
+            "type": "number"
+          },
+          "progress": {
+            "type": "number"
+          },
+          "currentLegIndex": {
+            "type": "integer"
+          },
+          "legCount": {
+            "type": "integer"
+          },
+          "waitingForUpdate": {
+            "type": "boolean"
+          },
+          "reference": {
+            "type": "boolean"
+          },
+          "nextTrainNumber": {
+            "type": "string"
+          },
+          "nextDepartureEpoch": {
+            "type": "number"
+          },
+          "connectionMinutes": {
+            "type": "integer"
+          },
+          "targetIsEstimate": {
+            "type": "boolean",
+            "description": "True only when the current target uses a validated station estimate; false means scheduled or user planned time."
+          }
+        },
+        "required": [
+          "phase",
+          "trainNumber",
+          "destination",
+          "origin",
+          "targetEpoch",
+          "scheduledEpoch",
+          "sourceFetchedEpoch",
+          "validUntilEpoch",
+          "progress",
+          "currentLegIndex",
+          "legCount",
+          "waitingForUpdate",
+          "reference",
+          "targetIsEstimate"
+        ]
+      }
+    }
+  }
+}
