@@ -927,6 +927,70 @@
           }
         }
       ]
+    },
+    "/v1/widget-token": {
+      "put": {
+        "summary": "Register the WidgetKit token separately from ordinary and Live Activity tokens",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "environment"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{32,512}$",
+                    "description": "Even-length hexadecimal APNs WidgetKit token."
+                  },
+                  "environment": {
+                    "type": "string",
+                    "enum": [
+                      "sandbox",
+                      "production"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registered for the authenticated installation and matching APNs environment"
+          },
+          "400": {
+            "description": "Invalid token or environment"
+          },
+          "401": {
+            "description": "Invalid installation credential"
+          },
+          "409": {
+            "description": "APNs environment does not match the installation"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unregister WidgetKit pushes when switching environments",
+        "responses": {
+          "200": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Invalid installation credential"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1473,6 +1537,10 @@
           "targetIsEstimate": {
             "type": "boolean",
             "description": "True only when the current target uses a validated station estimate; false means scheduled or user planned time."
+          },
+          "progressStartEpoch": {
+            "type": "number",
+            "description": "Optional effective boarding-departure Unix timestamp for a native continuously advancing progress bar. Older clients can ignore it."
           }
         },
         "required": [

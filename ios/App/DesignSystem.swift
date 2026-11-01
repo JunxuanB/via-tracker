@@ -32,6 +32,15 @@ enum VIATheme {
 struct VIADivider: View {
   var body: some View { Rectangle().fill(VIATheme.line).frame(height: 1).accessibilityHidden(true) }
 }
+struct SidebarButtonStyle: ButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .opacity(configuration.isPressed ? 0.7 : 1)
+      .background(configuration.isPressed ? VIATheme.line : .clear,
+        in: RoundedRectangle(cornerRadius: 12))
+      .contentShape(Rectangle())
+  }
+}
 struct VIACard<Content: View>: View {
   var tinted = false
   var padding: CGFloat = 18
@@ -66,7 +75,7 @@ struct Notice: View {
     } icon: {
       Image(systemName: symbol)
     }
-    .font(.system(size: 12)).lineSpacing(4).foregroundStyle(VIATheme.accent)
+    .font(.footnote).lineSpacing(4).foregroundStyle(VIATheme.accent)
     .padding(.vertical, 13).padding(.horizontal, 14).frame(maxWidth: .infinity, alignment: .leading)
     .background(VIATheme.tintSurface, in: RoundedRectangle(cornerRadius: 14))
   }
@@ -74,7 +83,7 @@ struct Notice: View {
 struct PrimaryButtonStyle: ButtonStyle {
   @Environment(\.isEnabled) private var enabled
   func makeBody(configuration: Configuration) -> some View {
-    configuration.label.font(.system(size: 15, weight: .medium))
+    configuration.label.font(.body.weight(.medium))
       .multilineTextAlignment(.center).padding(.horizontal, 14).padding(.vertical, 12)
       .frame(maxWidth: .infinity, minHeight: 50)
       .foregroundStyle(Color(red: 0.145, green: 0.149, blue: 0.133))
@@ -85,7 +94,7 @@ struct PrimaryButtonStyle: ButtonStyle {
 struct SecondaryButtonStyle: ButtonStyle {
   @Environment(\.isEnabled) private var enabled
   func makeBody(configuration: Configuration) -> some View {
-    configuration.label.font(.system(size: 15, weight: .medium))
+    configuration.label.font(.body.weight(.medium))
       .multilineTextAlignment(.center).padding(.horizontal, 14).padding(.vertical, 12)
       .frame(maxWidth: .infinity, minHeight: 50).foregroundStyle(VIATheme.accent)
       .background(
@@ -112,7 +121,7 @@ struct VIANavigationBar<Trailing: View>: View {
   @ViewBuilder var trailing: Trailing
   var body: some View {
     ZStack {
-      Text(title).font(.system(size: 16, weight: .semibold)).padding(.horizontal, 90)
+      Text(title).font(.headline).lineLimit(1).minimumScaleFactor(0.75).padding(.horizontal, 90)
       HStack {
         if !back.isEmpty {
           Button(action: onBack) {
@@ -157,7 +166,10 @@ struct CountdownText: View {
     let h = seconds / 3600
     let m = (seconds % 3600) / 60
     let s = seconds % 60
-    if compact { return h > 0 ? "\(h) 小时 \(m) 分" : "\(m) 分钟" }
+    if compact {
+      if seconds > 0 && seconds < 60 { return "不到 1 分钟" }
+      return h > 0 ? "\(h) 小时 \(m) 分" : "\(m) 分钟"
+    }
     return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
   }
 }
@@ -217,7 +229,7 @@ struct JourneyHero: View {
           Text(
             state.phase == .beforeDeparture
               ? "\(Time.format(journey.plannedLeaveAt,zone:zone)) 出门"
-              : "\(riding ? (state.targetIsEstimate ? "预计" : "计划") : "计划") \(Time.format(state.targetDate,zone:zone)) \(riding ? "到达" : "发车")"
+              : "\(state.targetIsEstimate ? "预计" : "计划") \(Time.format(state.targetDate,zone:zone)) \(riding ? "到达" : "发车")"
           )
           Spacer()
           Image(systemName: "arrow.up.right")

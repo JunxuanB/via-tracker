@@ -5,23 +5,29 @@
 <header><div class="brand">VIA <span>行程测试台</span></div><span class="badge">仅测试数据</span><span id="connection" role="status">尚未收到 App 请求</span></header>
 <div class="layout">
 <aside>
-  <label for="search">查找测试车次</label><input id="search" type="search" placeholder="14 / Montréal / Montreal" autocomplete="off">
+  <label for="serviceDate">1 · 选择始发日期</label><input id="serviceDate" type="date">
+  <div class="date-actions"><button id="previousDate" aria-label="前一天">←</button><button id="today">今天</button><button id="nextDate" aria-label="后一天">→</button></div>
+  <label for="availableDates">已有数据的日期</label><select id="availableDates"></select>
+  <details class="date-create"><summary>添加这天的车次</summary><label for="copySource">复制线路与计划时刻</label><select id="copySource"></select><button id="createDate" class="primary">补齐所选日期的车次</button><p class="muted">保留已有班次，只添加缺少的车次。新班次清空延误和到站状态。</p></details>
+  <label for="search">2 · 查找当天车次</label><input id="search" type="search" placeholder="14 / Montréal / Montreal" autocomplete="off">
   <p id="count" class="muted"></p><nav id="trains" aria-label="测试车次"></nav>
-  <div class="aside-footer"><a href="/control/export" download>导出全部数据</a><label class="file-button">导入 JSON<input id="import" type="file" accept="application/json,.json"></label><button id="reset" class="quiet">重置为当前时间的示例</button><button id="undo" class="quiet">撤销上次修改</button></div>
+  <div class="aside-footer"><a href="/control/export" download>导出全部日期的数据</a><label class="file-button">导入 JSON<input id="import" type="file" accept="application/json,.json"></label><button id="reload" class="quiet">重新读取数据</button><button id="reset" class="quiet">重置全部日期的数据</button><button id="undo" class="quiet">撤销上次修改</button></div>
 </aside>
 <main>
-  <section class="intro"><p class="eyebrow">SIMULATION WORKSPACE</p><h1>把行程调到你想看的那一刻。</h1><p>选车次、模拟状态，再回到 App 看变化。修改只作用于这个测试台。</p>
-  <details id="setup"><summary>连接 App · 只需设置一次</summary><ol><li>用 Xcode 的 <strong>Debug</strong> 配置运行。</li><li>在 Scheme → Run → Arguments → Environment Variables 添加 <code>VIA_API_URL</code>，值为 <code id="serverURL"></code>。</li><li>重新运行 App，顶部出现“测试数据”后，添加这里的车次。App 在前台时约每 3 秒刷新。</li></ol><p>真机和 Mac 需在同一网络；用 <code>npm run test-console -- --host 0.0.0.0</code> 启动，并把地址换成 Mac 的局域网 IP。真机首次连接需允许本地网络。</p><p>测试行程独立保存。这里不模拟 APNs，实时活动需保持 App 在前台接收更改，再锁屏查看。测试模式不覆盖日常小组件。</p></details></section>
+  <section class="intro"><p class="eyebrow">SIMULATION WORKSPACE</p><h1>按日期编辑每一班车。</h1><p>先选始发日期，再选车次。不同日期的同号列车独立保存，修改只作用于所选班次。</p>
+  <details id="setup"><summary>连接 App · 只需设置一次</summary><ol><li>用 Xcode 的 <strong>Debug</strong> 配置运行。</li><li>在 Scheme → Run → Arguments → Environment Variables 添加 <code>VIA_API_URL</code>，值为 <code id="serverURL"></code>。</li><li>重新运行 App，在设置页看到“测试模式”后，添加这里的车次。App 在前台时约每 3 秒刷新。</li></ol><p>真机和 Mac 需在同一网络；用 <code>npm run test-console -- --host 0.0.0.0</code> 启动，并把地址换成 Mac 的局域网 IP。真机首次连接需允许本地网络。</p><p>测试行程独立保存。这里不模拟 APNs，实时活动需保持 App 在前台接收更改，再锁屏查看。测试模式不覆盖日常小组件。</p></details></section>
   <section id="publicSetup" class="card" hidden><h3>手机直接切换，无需连接电脑</h3><ol><li>App → 设置，连续点击底部版本号 7 次。</li><li>打开环境面板，点击测试环境旁的 ⓘ，选择“进入测试环境”。</li><li>添加测试行程并开启实时活动，再锁屏。在这里改延误、到站状态，后台会向设备推送。</li></ol><p>测试环境使用独立数据。此面板公开、共享，修改会影响连接这个环境的测试设备。</p></section>
   <section id="pushPanel" class="card" hidden><div class="train-title"><h3>设备与推送</h3><button id="pushNow">立即更新实时活动</button></div><p id="pushState" class="muted"></p><div id="devices"></div><h3>最近推送记录</h3><div id="deliveries" aria-live="polite"></div><p class="muted">“Apple 已接收”仅表示推送被接收，显示时间由设备和系统决定。已划掉的实时活动需要在 App 内重新开启。</p></section>
   <section class="source"><label for="mode">数据连接</label><select id="mode"><option value="healthy">正常更新</option><option value="stale">数据较旧</option><option value="failure">连接失败 · HTTP 503</option><option value="unavailable">暂不可用</option><option value="empty">异常空数据</option></select><span class="muted">影响全部车次</span></section>
   <div id="message" role="status" aria-live="polite">准备就绪</div>
+  <section id="emptyDate" class="card" hidden><h3 id="emptyDateTitle"></h3><p>展开左侧“添加这天的车次”，从已有线路生成这一天的测试班次。原日期的车次和修改会保留。</p><p class="muted">日期指列车在始发站的服务日期；跨夜列车中途停站可能在后一天。</p></section>
   <section id="editor" hidden>
-    <div class="train-title"><div><p class="eyebrow" id="trainId"></p><h2 id="route"></h2></div><button id="save" class="primary">保存修改</button></div>
-    <div class="scenarios"><button data-action="departSoon">2 分钟后发车</button><button data-action="riding">正在途中</button><button data-action="arrivalSoon">30 秒后终到</button><button data-action="arrived">已到达终点</button></div>
+    <div class="train-title editor-heading"><div><p class="eyebrow" id="trainId"></p><h2 id="route"></h2></div><div class="editor-actions"><button id="exportDraft">下载当前草稿</button><button id="save" class="primary">保存修改</button></div></div>
+    <div class="scenario-station"><label for="scenarioStation">模拟上车站 · 与 App 行程选择相同的车站</label><select id="scenarioStation"></select><p class="muted">发车操作会一起调整所选站和沿途预计时刻，点击后立即保存。中途上车请先切换到对应车站。</p></div>
+    <div class="scenarios"><button data-action="departSoon">此站 2 分钟后发车</button><button data-action="departNow" class="primary">已从此站发车</button><button data-action="riding">从此站乘车途中</button><button data-action="arrivalSoon">30 秒后终到</button><button data-action="arrived">已到达终点</button></div>
     <div class="delay"><label for="delay">剩余站点延误</label><input id="delay" type="number" value="15" min="-1440" max="1440"><span>分钟</span><button id="delayApply">应用延误</button><span class="muted">负数表示提前，已到站的时间不变</span></div>
     <div class="two-columns">
-      <section class="card"><h3>运行状态</h3><label>始发日期<input id="instance" type="date"></label><div class="checks"><label><input id="departed" type="checkbox">已发车</label><label><input id="arrived" type="checkbox">全程已到达</label></div><p class="muted">修改始发日期会改变车次身份，需要在 App 重新添加。场景按钮会保留身份。</p></section>
+      <section class="card"><h3>运行状态</h3><p>始发日期 <strong id="instance"></strong></p><p id="runningState"></p><p class="muted">使用上方状态按钮修改，避免状态标记和发车时刻不一致。整列车已发车不代表已离开你选择的中途上车站。</p><p class="muted">需要另一日的同号车，请先在左侧选择日期并添加该日班次。</p></section>
       <section class="card"><h3>地图与速度</h3><div class="position-grid"><label>纬度<input id="lat" type="number" step="any" min="-90" max="90" placeholder="未提供"></label><label>经度<input id="lng" type="number" step="any" min="-180" max="180" placeholder="未提供"></label><label>速度 km/h<input id="speed" type="number" step="any" min="0" max="400" placeholder="未提供"></label><label>方向 °<input id="direction" type="number" step="any" min="0" max="359.99" placeholder="未提供"></label></div><label>定位时间（带时区）<input id="poll" type="text" placeholder="2026-11-06T18:00:00Z"></label><div class="small-actions"><button data-action="noPosition">移除定位</button><button data-action="oldPosition">定位过期</button><button data-action="freshPosition">定位更新到现在</button></div></section>
     </div>
     <section class="card stops"><h3>沿途站点</h3><p class="muted">时间使用 ISO 8601，保留 Z 或 ±HH:MM 时区。点击“到达此站”可立即模拟在该站下车；仅改这一班车。</p><div class="table-scroll"><table><thead><tr><th>车站</th><th>事件</th><th>计划时间</th><th>预计时间</th><th>到站状态</th></tr></thead><tbody id="stops"></tbody></table></div></section>

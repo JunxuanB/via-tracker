@@ -23,6 +23,8 @@ http
       "apns-topic",
       "apns-push-type",
       "apns-priority",
+      "apns-expiration",
+      "apns-collapse-id",
       "content-type",
     ])
       if (req.headers[key]) headers[key] = req.headers[key];

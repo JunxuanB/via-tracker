@@ -123,7 +123,7 @@ actor APIClient {
     return (data, http)
   }
   func invalidateTrainCache() { etag = nil }
-  func trains() async throws -> TrainEnvelope? {
+  func trains() async throws -> (envelope: TrainEnvelope, data: Data)? {
     let (data, response) = try await request("/v1/trains")
     if response.statusCode == 304 { return nil }
     let envelope = try JSONDecoder().decode(TrainEnvelope.self, from: data)
@@ -132,7 +132,8 @@ actor APIClient {
       throw Failure.message("列车数据暂时为空，保留最近有效数据。")
     }
     etag = response.value(forHTTPHeaderField: "ETag")
-    return envelope
+    // Persist the already validated response without encoding the whole feed on the UI actor.
+    return (envelope, data)
   }
   func register(environment: String) async throws {
     if registered { return }
@@ -171,6 +172,12 @@ actor APIClient {
       body: JSONEncoder().encode(Registration(pushToken: token, environment: environment)),
       authenticated: true)
   }
+  func configureWidgetPush(environment: String) throws {
+    guard !shuttingDown, let identity else { return }
+    let registration = WidgetRegistration(apiBaseURL: baseURL.absoluteString,
+      authorization: "Bearer \(identity.id):\(identity.credential)", environment: environment)
+    if WidgetRegistration.read() != registration { try registration.write() }
+  }
   func testDeviceCode() throws -> String? {
     guard let identity else { return nil }
     return SHA256.hash(data: Data(identity.id.utf8)).prefix(4).map { String(format: "%02X", $0) }.joined()
@@ -190,6 +197,7 @@ actor APIClient {
     guard remotePush else { return }
     if identity == nil { identity = try? InstallationIdentity.load(namespace: identityNamespace) }
     guard identity != nil else { return }
+    _ = try? await request("/v1/widget-token", method: "DELETE", authenticated: true, duringShutdown: true)
     if publicTest {
       _ = try? await request("/v1/test-device", method: "DELETE", authenticated: true, duringShutdown: true)
       return

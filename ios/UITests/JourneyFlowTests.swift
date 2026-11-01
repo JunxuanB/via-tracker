@@ -1,6 +1,65 @@
 import XCTest
 
 @MainActor final class JourneyFlowTests: XCTestCase {
+  func testProductionPassengerProgressAndEditor() throws {
+    let app = XCUIApplication()
+    app.launchEnvironment["VIA_QA_SCENARIO"] = "before"
+    app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-selected-environment", "production"]
+    app.launch()
+    let progress = app.buttons["confirm-passenger-progress"]
+    XCTAssertTrue(progress.waitForExistence(timeout: 20))
+    XCTAssertEqual(progress.label, "我已出门，前往车站")
+    progress.tap()
+    XCTAssertEqual(progress.label, "我已到达车站")
+    progress.tap()
+    XCTAssertFalse(progress.exists)
+    app.buttons["管理行程"].tap()
+    XCTAssertFalse(app.buttons["更正行程状态"].exists)
+    app.buttons["编辑行程"].tap()
+    XCTAssertTrue(app.staticTexts["调整行程安排"].waitForExistence(timeout: 5))
+    let screenshot = XCTAttachment(screenshot: app.screenshot())
+    screenshot.name = "journey-editor"
+    screenshot.lifetime = .keepAlways
+    add(screenshot)
+    let edit = app.buttons["调整出门安排"]
+    for _ in 0..<5 where !edit.isHittable { app.swipeUp() }
+    edit.tap()
+    XCTAssertTrue(app.staticTexts["确认发车时间"].waitForExistence(timeout: 5))
+    app.buttons["next-planning"].tap()
+    app.buttons["增加15分钟"].tap()
+    app.buttons["confirm-leg"].tap()
+    app.buttons["save-journey"].tap()
+    XCTAssertTrue(app.buttons["管理行程"].waitForExistence(timeout: 5))
+  }
+
+  func testInstallationOnboardingCanFinishWithoutPermissionsAndPersists() throws {
+    let app = XCUIApplication()
+    app.launchEnvironment["VIA_QA_SCENARIO"] = "empty"
+    app.launchEnvironment["VIA_QA_ONBOARDING_ID"] = UUID().uuidString
+    app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+    app.launch()
+    let next = app.buttons["onboarding-next"]
+    XCTAssertTrue(next.waitForExistence(timeout: 20))
+    XCTAssertTrue(app.staticTexts["独立开发 · 非官方产品"].exists)
+    // Scroll on compact screens and at larger text sizes to reach the footer.
+    for _ in 0..<8 where !next.isHittable { app.swipeUp() }
+    next.tap()
+    let finish = app.buttons["onboarding-finish"]
+    XCTAssertTrue(finish.waitForExistence(timeout: 5))
+    for _ in 0..<8 where !finish.isHittable { app.swipeUp() }
+    finish.tap()
+    XCTAssertTrue(app.buttons["添加第一趟行程"].waitForExistence(timeout: 10))
+    app.terminate()
+    app.launch()
+    XCTAssertTrue(app.buttons["添加第一趟行程"].waitForExistence(timeout: 15))
+    XCTAssertFalse(app.buttons["onboarding-next"].exists)
+    app.terminate()
+    // A fresh installation has a separate completion flag.
+    app.launchEnvironment["VIA_QA_ONBOARDING_ID"] = UUID().uuidString
+    app.launch()
+    XCTAssertTrue(app.buttons["onboarding-next"].waitForExistence(timeout: 15))
+  }
+
   func testStorageWarmupShowsLoadingScreen() throws {
     let app = XCUIApplication()
     app.launchEnvironment["VIA_QA_SCENARIO"] = "empty"
@@ -18,7 +77,7 @@ import XCTest
     let app = XCUIApplication()
     app.launchEnvironment["VIA_QA_SCENARIO"] = "ui-test"
     app.launchEnvironment["VIA_QA_STORE"] = UUID().uuidString
-    app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+    app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN", "-selected-environment", "test"]
     app.launch()
     XCTAssertTrue(app.buttons["添加第一趟行程"].waitForExistence(timeout: 20))
     app.buttons["添加第一趟行程"].tap()

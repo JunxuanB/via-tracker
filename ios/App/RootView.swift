@@ -11,6 +11,7 @@ struct RootView: View {
   @State private var compactNavigationID = UUID()
   @State private var adding = false
   @State private var sidebar: String? = "journeys"
+  @State private var sidebarResetID = UUID()
   var body: some View {
     Group {
       #if DEBUG
@@ -36,55 +37,52 @@ struct RootView: View {
         ? 600 : store.qaScenario == "small-device" ? 320 : nil
     )
     .dynamicTypeSize(store.qaScenario == "large-text" ? .accessibility5 : userTypeSize)
-    .safeAreaInset(edge: .top, spacing: 0) {
-      if store.isTestMode {
-        Label("测试数据 · 不影响正式行程", systemImage: "wrench.and.screwdriver")
-          .font(.caption.bold()).frame(maxWidth: .infinity).padding(8)
-          .background(VIATheme.yellow).foregroundStyle(.black)
-      }
-    }
   }
   private var content: some View {
     Group {
       if sizeClass == .regular && store.qaScenario != "ipad-narrow" {
         HStack(spacing: 0) {
           VStack(alignment: .leading, spacing: 18) {
-            Text("VIA Tracker").font(.system(size: 27, weight: .semibold)).padding(.horizontal, 10)
+            Text("Train Tracker").font(.system(size: 27, weight: .semibold)).padding(.horizontal, 10)
             ForEach(
               Array(
                 [
                   ("journeys", "我的行程", "house.fill"), ("trains", "列车列表", "tram.fill"),
-                  ("settings", "设置", "gearshape"),
+                  ("history", "历史行程", "clock.arrow.circlepath"), ("settings", "设置", "gearshape"),
                 ].enumerated()), id: \.offset
             ) { _, item in
               Button {
-                sidebar = item.0
+                selectSidebar(item.0)
               } label: {
                 Label(item.1, systemImage: item.2).font(.system(size: 14, weight: .medium))
                   .frame(maxWidth: .infinity, alignment: .leading).padding(14)
+                  .frame(minHeight: 48).contentShape(Rectangle())
                   .background(
                     sidebar == item.0 ? VIATheme.tintSurface : .clear,
                     in: RoundedRectangle(cornerRadius: 12))
-              }.buttonStyle(.plain)
+              }.buttonStyle(SidebarButtonStyle())
+                .accessibilityAddTraits(sidebar == item.0 ? .isSelected : [])
             }
             VIADivider()
             Text("已保存的行程").font(.system(size: 11)).foregroundStyle(VIATheme.muted).padding(
               .horizontal, 12)
             ScrollView {
               VStack(spacing: 4) {
-                ForEach(store.journeys) { j in
+                ForEach(store.activeJourneys) { j in
                   Button {
-                    sidebar = j.id
+                    selectSidebar(j.id)
                   } label: {
                     VStack(alignment: .leading, spacing: 7) {
                       Text(j.displayTitle).font(.system(size: 14, weight: .medium))
                       Text(j.legs.map { "VIA \($0.trainNumber)" }.joined(separator: " + "))
                         .font(.system(size: 11)).foregroundStyle(VIATheme.muted)
                     }.padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                      .frame(minHeight: 56).contentShape(Rectangle())
                       .background(
                         sidebar == j.id ? VIATheme.tintSurface : .clear,
                         in: RoundedRectangle(cornerRadius: 12))
-                  }.buttonStyle(.plain)
+                  }.buttonStyle(SidebarButtonStyle())
+                    .accessibilityAddTraits(sidebar == j.id ? .isSelected : [])
                 }
               }
             }
@@ -97,14 +95,16 @@ struct RootView: View {
           NavigationStack {
             if sidebar == "settings" {
               SettingsView(store: store)
+            } else if sidebar == "history" {
+              JourneyHistory(store: store, showsBackButton: false)
             } else if sidebar == "trains" {
               TrainBrowser(store: store)
             } else if let j = store.journeys.first(where: { $0.id == sidebar }) {
               JourneyDetail(store: store, id: j.id)
             } else {
-              JourneyHome(store: store, adding: $adding, onSelect: { sidebar = $0 })
+              JourneyHome(store: store, adding: $adding, onSelect: selectSidebar)
             }
-          }.id(sidebar)
+          }.id(sidebar).id(sidebarResetID)
         }
       } else {
         NavigationStack {
@@ -176,7 +176,7 @@ struct RootView: View {
     .onChange(of: store.selectedJourneyID) { _, id in if let id { sidebar = id } }
     .onChange(of: store.journeys.map(\.id)) { _, ids in
       if let id = store.selectedJourneyID, !ids.contains(id) { store.selectedJourneyID = nil }
-      if let sidebar, !["journeys", "trains", "settings"].contains(sidebar), !ids.contains(sidebar) {
+      if let sidebar, !["journeys", "trains", "settings", "history"].contains(sidebar), !ids.contains(sidebar) {
         self.sidebar = "journeys"
       }
     }
@@ -190,10 +190,18 @@ struct RootView: View {
       Text(store.storageError ?? "")
     }
   }
+  private func selectSidebar(_ destination: String) {
+    // A repeated tap on the selected category returns from its pushed detail to the root.
+    if sidebar == destination { sidebarResetID = UUID() }
+    store.selectedJourneyID = nil
+    tab = destination == "settings" ? 2 : destination == "trains" ? 1 : 0
+    sidebar = destination
+  }
   private func open(_ url: URL) {
     guard url.scheme == "viatracker" else { return }
     adding = false
     compactNavigationID = UUID()
+    sidebarResetID = UUID()
     store.selectedJourneyID = nil
     switch url.host {
     case "settings": tab = 2; sidebar = "settings"
@@ -286,43 +294,38 @@ struct JourneyHome: View {
               Button {
                 onSelect(j.id)
               } label: {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
+                TimelineView(.periodic(from: .now, by: 15)) { context in
                   homeCard(j, now: store.qaDate ?? context.date)
                 }
               }.buttonStyle(.plain)
             }
-            let others = store.journeys.filter { $0.id != store.primaryJourney?.id }
+            let others = store.activeJourneys.filter { $0.id != store.primaryJourney?.id }
             if !others.isEmpty {
               VIASectionLabel(title: "接下来的行程")
-              ForEach(others) { j in
-                Button {
-                  onSelect(j.id)
-                } label: {
-                  VIACard(padding: 17) {
-                    HStack {
-                      Text(j.legs.map { "VIA \($0.trainNumber)" }.joined(separator: " + ")).font(
-                        .system(size: 12, weight: .semibold))
-                      Spacer()
-                      StatusPill(
-                        title: Projection.state(j, now: store.qaDate ?? Date())?.phase == .completed ? "已到达" : j.trackingEnded ? "已结束追踪"
-                          : j.currentLeg?.source == .reference ? "待同步"
-                          : Projection.state(j, now: store.qaDate ?? Date())?.phase.title ?? "待出发",
-                        warning: j.currentLeg?.source == .reference)
-                    }
-                    Text(j.displayTitle).font(.system(size: 18, weight: .semibold))
-                    HStack {
-                      Text(
-                        Time.format(j.legs.first?.boarding?.departure?.scheduledDate,
-                          zone: j.legs.first?.boarding?.timeZone ?? "America/Toronto", date: true)
-                      ).foregroundStyle(VIATheme.muted)
-                      Spacer()
-                      Text("查看行程").foregroundStyle(VIATheme.accent)
-                    }.font(.system(size: 12))
-                  }
+              ForEach(others) { journey in
+                Button { onSelect(journey.id) } label: {
+                  SavedJourneyCard(journey: journey, now: store.qaDate ?? store.clockNow)
                 }.buttonStyle(.plain)
               }
             }
-            Text("默认突出最近的未完成行程 · 可切换主行程").font(.system(size: 10)).foregroundStyle(VIATheme.muted)
+            if store.activeJourneys.isEmpty {
+              Notice(text: "暂无待出发的行程，准备好下一趟旅行时再添加。", symbol: "tram.fill")
+            }
+            if !store.recentJourneys.isEmpty {
+              VIASectionLabel(title: "刚刚完成", detail: "在首页保留 24 小时")
+              ForEach(store.recentJourneys) { journey in
+                Button { onSelect(journey.id) } label: {
+                  SavedJourneyCard(journey: journey, now: store.qaDate ?? store.clockNow)
+                }.buttonStyle(.plain)
+              }
+            }
+            NavigationLink {
+              JourneyHistory(store: store)
+            } label: {
+              Label("历史行程 · \(store.historyJourneys.count)", systemImage: "clock.arrow.circlepath")
+                .frame(maxWidth: .infinity, minHeight: 48)
+            }.buttonStyle(SecondaryButtonStyle())
+            Text("行程保存在本机，历史记录会一直保留，直到你删除。").font(.system(size: 11)).foregroundStyle(VIATheme.muted)
             Spacer(minLength: 0)
           }
         }.padding(.horizontal, 24).padding(.top, 45).padding(.bottom, 16)
@@ -353,8 +356,9 @@ struct JourneyHome: View {
         VStack(alignment: .leading, spacing: 2) {
           Text(j.legs.first?.boarding?.name ?? state.origin)
           if j.legs.count > 1 {
-            (Text("经 \(j.legs[0].alighting?.name ?? "")  ").foregroundColor(VIATheme.muted)
-              + Text("→ \(j.legs.last?.alighting?.name ?? state.destination)"))
+            let transfer = Text("经 \(j.legs[0].alighting?.name ?? "")")
+              .foregroundStyle(VIATheme.muted)
+            Text("\(transfer)  → \(j.legs.last?.alighting?.name ?? state.destination)")
           } else {
             Text("→ \(state.destination)")
           }
@@ -371,15 +375,66 @@ struct JourneyHome: View {
         }.font(.system(size: 12)).foregroundStyle(VIATheme.amber)
         if let next = state.nextTrainNumber, let epoch = state.nextDepartureEpoch,
           j.legs.indices.contains(j.currentLegIndex + 1) {
-          HStack {
+          VStack(alignment: .leading, spacing: 5) {
             Text("下一段 VIA \(next) · \(Time.format(Date(timeIntervalSince1970: epoch), zone: j.legs[j.currentLegIndex + 1].boarding?.timeZone ?? "America/Toronto")) 发车")
-            Spacer()
-            if let gap = state.connectionMinutes { Text("间隔 \(gap) 分钟").fontWeight(.semibold) }
-          }.font(.system(size: 11)).foregroundStyle(VIATheme.accent).padding(12)
+            if let summary = state.connectionSummary { Text(summary).fontWeight(.semibold) }
+          }.font(.system(size: 11)).foregroundStyle(VIATheme.accent)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
             .background(VIATheme.surface, in: RoundedRectangle(cornerRadius: 12)).padding(.top, 19)
         }
       }
     }
+  }
+}
+struct SavedJourneyCard: View {
+  var journey: Journey
+  var now: Date
+  var body: some View {
+    let state = Projection.state(journey, now: now)
+    VIACard(padding: 17) {
+      HStack {
+        Text(journey.legs.map { "VIA \($0.trainNumber)" }.joined(separator: " + "))
+          .font(.system(size: 12, weight: .semibold))
+        Spacer()
+        StatusPill(title: journey.trackingEnded ? "已结束追踪" : state?.phase.title ?? "待出发")
+      }
+      Text(journey.displayTitle).font(.system(size: 18, weight: .semibold))
+      HStack {
+        Text(Time.format(journey.legs.first?.boarding?.departure?.scheduledDate,
+          zone: journey.legs.first?.boarding?.timeZone ?? "America/Toronto", date: true))
+          .foregroundStyle(VIATheme.muted)
+        Spacer()
+        Image(systemName: "chevron.right").foregroundStyle(VIATheme.accent)
+      }.font(.system(size: 12))
+    }
+  }
+}
+struct JourneyHistory: View {
+  @Bindable var store: AppStore
+  var showsBackButton = true
+  @Environment(\.dismiss) private var dismiss
+  var body: some View {
+    ScrollView {
+      LazyVStack(alignment: .leading, spacing: 16) {
+        if store.historyJourneys.isEmpty {
+          ContentUnavailableView("还没有历史行程", systemImage: "clock.arrow.circlepath",
+            description: Text("完成的行程会自动收进这里。"))
+        } else {
+          Text("共 \(store.historyJourneys.count) 趟 · 保存在本机")
+            .font(.caption).foregroundStyle(VIATheme.muted)
+          ForEach(store.historyJourneys) { journey in
+            NavigationLink {
+              JourneyDetail(store: store, id: journey.id, showsBackButton: true)
+            } label: {
+              SavedJourneyCard(journey: journey, now: store.qaDate ?? store.clockNow)
+            }.buttonStyle(.plain)
+          }
+        }
+      }.padding(24).frame(maxWidth: 800).frame(maxWidth: .infinity)
+    }.viaBackground().toolbar(.hidden, for: .navigationBar)
+      .safeAreaInset(edge: .top, spacing: 0) {
+        VIANavigationBar(title: "历史行程", back: showsBackButton ? "返回" : "", onBack: { dismiss() }) { EmptyView() }
+      }
   }
 }
 struct TrainBrowser: View {
@@ -388,6 +443,8 @@ struct TrainBrowser: View {
   @State private var searchIndex = TrainSearchIndex(trains: [])
   @State private var filteredTrains: [TrainSnapshot] = []
   @State private var indexing = true
+  @State private var selectedDate: String?
+  private var availableDates: [String] { Array(Set(store.trains.map(\.originServiceDate))).sorted(by: >) }
   var body: some View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 16) {
@@ -398,7 +455,7 @@ struct TrainBrowser: View {
         }
         if !indexing && !store.trains.isEmpty && filteredTrains.isEmpty {
           ContentUnavailableView.search(text: query)
-          Button("清除搜索") { query = "" }.buttonStyle(SecondaryButtonStyle())
+          Button("显示全部车次") { query = ""; selectedDate = nil }.buttonStyle(SecondaryButtonStyle())
         }
         if store.trains.isEmpty && store.isRefreshing {
           ProgressView("正在获取列车…").frame(maxWidth: .infinity)
@@ -426,16 +483,32 @@ struct TrainBrowser: View {
             }
           }.font(.system(size: 14)).padding(13).background(
             VIATheme.line, in: RoundedRectangle(cornerRadius: 12))
+          HStack {
+            Menu {
+              Picker("始发日期", selection: $selectedDate) {
+                Text("全部日期").tag(String?.none)
+                ForEach(availableDates, id: \.self) { date in
+                  Text(date).tag(Optional(date))
+                }
+              }
+            } label: {
+              Label(selectedDate ?? "全部始发日期", systemImage: "calendar")
+                .font(.system(size: 13, weight: .medium)).frame(minHeight: 44)
+            }.accessibilityLabel("筛选始发日期，\(selectedDate ?? "全部日期")")
+            Spacer()
+            Text("\(filteredTrains.count) 班列车").font(.caption).foregroundStyle(VIATheme.muted)
+          }
         }.padding(.horizontal, 24).padding(.top, 45).padding(.bottom, 12).background(
           VIATheme.background)
       }
-      .task(id: store.trains) {
+      .task(id: store.trainDataRevision) {
         let snapshots = store.trains
-        let work = Task.detached(priority: .userInitiated) { TrainSearchIndex(trains: snapshots) }
-        let index = await work.value
+        let previousIndex = searchIndex
+        let work = Task.detached(priority: .userInitiated) { TrainSearchIndex(trains: snapshots, reusing: previousIndex) }
+        let index = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
         guard !Task.isCancelled else { return }
         searchIndex = index
-        filteredTrains = index.search(query)
+        filteredTrains = index.search(query, serviceDate: selectedDate)
         indexing = false
       }
       .task(id: query) {
@@ -443,8 +516,9 @@ struct TrainBrowser: View {
           do { try await Task.sleep(for: .milliseconds(180)) } catch { return }
         }
         guard !Task.isCancelled else { return }
-        filteredTrains = searchIndex.search(query)
+        filteredTrains = searchIndex.search(query, serviceDate: selectedDate)
       }
+      .onChange(of: selectedDate) { _, date in filteredTrains = searchIndex.search(query, serviceDate: date) }
       .scrollDismissesKeyboard(.interactively)
       .refreshable { await store.refresh() }.toolbar {
         ToolbarItemGroup(placement: .keyboard) {
@@ -481,10 +555,18 @@ struct TrainRow: View {
         )
         .font(.system(size: 20)).monospacedDigit()
         Spacer()
-        Text("始发 \(train.originServiceDate)").font(.system(size: 10)).foregroundStyle(
+        Text(arrivalSummary).font(.system(size: 10)).foregroundStyle(
           VIATheme.muted)
       }
     }
+  }
+  private var arrivalSummary: String {
+    let zone = train.calls.last?.timeZone ?? "America/Toronto"
+    if let arrival = train.calls.last?.arrival?.scheduledDate,
+      Time.serviceDate(arrival, zone: zone) != train.originServiceDate {
+      return "\(Time.formatted(arrival, zone: zone, pattern: "M月d日"))到达"
+    }
+    return train.arrived ? "已到达" : "计划时刻"
   }
 }
 struct TrainInfo: View {

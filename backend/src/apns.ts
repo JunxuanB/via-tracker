@@ -36,14 +36,16 @@ export async function sendAPNs(
   token: string,
   environment: string,
   payload: unknown,
-  activity: boolean,
+  activity: boolean | "widgets",
   priority = 5,
+  collapseID?: string,
 ): Promise<{ ok: boolean; permanent: boolean; reason?: string }> {
   const host =
     environment === "sandbox"
       ? "api.sandbox.push.apple.com"
       : "api.push.apple.com";
   const body = JSON.stringify(payload);
+  const collapse = collapseID ? await sha256(collapseID) : undefined;
   if (new TextEncoder().encode(body).length > 4096)
     return { ok: false, permanent: false, reason: "payload_too_large" };
   try {
@@ -56,8 +58,10 @@ export async function sendAPNs(
           authorization: `bearer ${await jwt(env)}`,
           "content-type": "application/json",
           "apns-topic":
-            env.APNS_BUNDLE_ID + (activity ? ".push-type.liveactivity" : ""),
-          "apns-push-type": activity ? "liveactivity" : "alert",
+            env.APNS_BUNDLE_ID + (activity === "widgets" ? ".push-type.widgets" : activity ? ".push-type.liveactivity" : ""),
+          "apns-push-type": activity === "widgets" ? "widgets" : activity ? "liveactivity" : "alert",
+          "apns-expiration": String(Math.floor(Date.now() / 1000) + (activity === true ? 120 : 300)),
+          ...(collapse ? { "apns-collapse-id": collapse } : {}),
           "apns-priority": String(priority),
           "x-apns-environment": environment,
         },

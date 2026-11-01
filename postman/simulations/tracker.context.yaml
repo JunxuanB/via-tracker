@@ -3,6 +3,13 @@ assumptions:
   - VIA fields have no formal schema or station actual-event guarantee.
   - APNs mock validates caller state preservation and retry behavior, not Apple acceptance or device delivery.
   - The one-port run uses SOURCE_URL and APNS_PROXY_URL overrides; production endpoints remain unchanged.
+  - id: daily-feed-storage-failure-recovery
+    status: supported
+    claim: The local Worker retains the last valid daily feed documents after simulated VIA 503 and empty responses, then resumes updates on recovery.
+    reason: The existing integration suite passed against the changed daily-document storage using local D1 and the checked-in VIA and APNs stand-ins.
+    verification: On 2026-10-31, tests/integration.ts passed all 12 scenarios; Postman CLI 1.76.0 request logs showed VIA healthy, 503, empty and recovered responses, plus APNs sends and retry control. This establishes caller behavior against these fixtures, not guarantees from VIA or physical Apple delivery.
+    source: backend/tests/integration.ts; backend/tests/train-feed.test.ts; backend/src/service.ts; docs/D1_USAGE_FIX.md
+    updated_at: "2026-10-31"
 scenarios: [healthy, VIA failure, empty VIA response, APNs unavailable, invalid activity token]
 unverified:
   - physical device delivery

@@ -21,6 +21,7 @@
     "@types/node": "^26.0.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
+    "miniflare": "5.20261023.3-beta",
     "prettier": "^3.9.10",
     "tsx": "latest",
     "typescript": "latest",

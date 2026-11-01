@@ -1,5 +1,7 @@
+import { deliverMilestones, deliverWidgets } from "./milestones.ts";
 import { normalize } from "./normalize.ts";
 import { boundedJSON } from "./http.ts";
+import { feedStatements } from "./train-feed.ts";
 import {
   project,
   reconcile,
@@ -25,6 +27,7 @@ export interface SubscriptionRow {
   last_sent_at: number | null;
   last_apns_timestamp: number;
   notification_state: string;
+  milestone_state: string;
   expires_at: number;
   updated_at: number;
   push_token?: string;
@@ -32,9 +35,10 @@ export interface SubscriptionRow {
 }
 export async function allTrains(env: Env): Promise<TrainSnapshot[]> {
   const { results } = await env.DB.prepare(
-    "SELECT snapshot FROM trains ORDER BY number, service_date",
-  ).all<{ snapshot: string }>();
-  return results.map((r) => JSON.parse(r.snapshot) as TrainSnapshot);
+    "SELECT snapshots FROM train_feeds ORDER BY service_date",
+  ).all<{ snapshots: string }>();
+  return results.flatMap((r) => Object.values(JSON.parse(r.snapshots) as Record<string, TrainSnapshot>))
+    .sort((a, b) => a.trainNumber.localeCompare(b.trainNumber) || a.originServiceDate.localeCompare(b.originServiceDate));
 }
 export async function refresh(env: Env): Promise<void> {
   const now = Date.now(),
@@ -58,18 +62,7 @@ export async function refresh(env: Env): Promise<void> {
       fetchedAt,
       version,
     );
-    const statements = normalized.map((t) =>
-      env.DB.prepare(
-        "INSERT INTO trains(id,number,service_date,snapshot,fetched_at) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM source_state WHERE lease_owner=?) ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,fetched_at=excluded.fetched_at WHERE excluded.fetched_at>trains.fetched_at",
-      ).bind(
-        t.id,
-        t.trainNumber,
-        t.originServiceDate,
-        JSON.stringify(t),
-        fetchedAt,
-        owner,
-      ),
-    );
+    const statements = feedStatements(env.DB, normalized, fetchedAt, "source", owner);
     statements.push(
       env.DB.prepare(
         "UPDATE source_state SET version=?,fetched_at=?,status='healthy' WHERE id=1 AND lease_owner=?",
@@ -93,7 +86,7 @@ export async function refresh(env: Env): Promise<void> {
 }
 export interface DeliveryObservation {
   installationID: string;
-  kind: "activity" | "notification";
+  kind: "activity" | "notification" | "widget";
   environment: string;
   ok: boolean;
   reason?: string;
@@ -119,6 +112,7 @@ export async function processSubscriptions(env: Env, options?: {
       .bind(claimedAt + 55, deliveryOwner, candidate.id, candidate.revision, claimedAt)
       .run();
     if (!claimed.meta.changes) continue;
+    let reminder: { row: SubscriptionRow; journey: Journey; now: number } | undefined;
     try {
       // A previous delivery can update this row without changing its client revision.
       const row = await env.DB.prepare(
@@ -133,43 +127,7 @@ export async function processSubscriptions(env: Env, options?: {
         .bind(JSON.stringify(j), row.id, row.revision, deliveryOwner)
         .run();
       if (!updated.meta.changes || j.trackingEnded) continue;
-      if (
-        j.pendingScheduleChange &&
-        !row.notification_state &&
-        row.push_token
-      ) {
-        const result = await sendAPNs(
-          env,
-          row.push_token,
-          row.environment ?? "sandbox",
-          {
-            aps: {
-              alert: {
-                title: "发车时间有变化",
-                body: "打开行程，看看是否需要调整出门时间。",
-              },
-              sound: "default",
-            },
-            journeyID: j.id,
-          },
-          false,
-          10,
-        );
-        await options?.onDelivery?.({ installationID: row.installation_id, kind: "notification",
-          environment: row.environment ?? "sandbox", ok: result.ok, reason: result.reason });
-        if (result.ok)
-          await env.DB.prepare(
-            "UPDATE subscriptions SET notification_state='sent' WHERE id=? AND revision=? AND delivery_owner=?",
-          )
-            .bind(row.id, row.revision, deliveryOwner)
-            .run();
-        else if (result.permanent)
-          await env.DB.prepare(
-            "UPDATE installations SET push_token=NULL WHERE id=? AND push_token=?",
-          )
-            .bind(row.installation_id, row.push_token)
-            .run();
-      }
+      reminder = { row, journey: j, now };
       if (!row.activity || j.trackingEnded) continue;
       const activity = JSON.parse(row.activity) as ActivitySession;
       if (now >= activity.startedAt + 28800) {
@@ -205,7 +163,8 @@ export async function processSubscriptions(env: Env, options?: {
         row.environment ?? "sandbox",
         activityPayload(next, timestamp, next.phase === "completed"),
         true,
-        options?.force || (previous && previous.phase !== next.phase) ? 10 : 5,
+        options?.force || !previous || previous.phase !== next.phase || previous.currentLegIndex !== next.currentLegIndex ? 10 : 5,
+        activity.id,
       );
       await options?.onDelivery?.({ installationID: row.installation_id, kind: "activity",
         environment: row.environment ?? "sandbox", ok: delivery.ok, reason: delivery.reason });
@@ -248,6 +207,12 @@ export async function processSubscriptions(env: Env, options?: {
         JSON.stringify({ event: "subscription_processing_failed" }),
       );
     } finally {
+      // Prioritize the island's phase transition; alerts have an independent failure path.
+      if (reminder) {
+        try {
+          await deliverMilestones(env, reminder.row, reminder.journey, deliveryOwner, reminder.now, options?.onDelivery);
+        } catch { console.error(JSON.stringify({ event: "milestone_delivery_failed" })); }
+      }
       await env.DB.prepare(
         "UPDATE subscriptions SET delivery_lease_until=0,delivery_owner=NULL WHERE id=? AND delivery_owner=?",
       )
@@ -255,12 +220,14 @@ export async function processSubscriptions(env: Env, options?: {
         .run();
     }
   }
+  try { await deliverWidgets(env, Math.floor(Date.now() / 1000), options?.onDelivery); }
+  catch { console.error(JSON.stringify({ event: "widget_delivery_failed" })); }
   await env.DB.batch([
     env.DB.prepare("DELETE FROM subscriptions WHERE expires_at<?").bind(now),
     env.DB.prepare(
       "DELETE FROM installations WHERE updated_at<? AND id NOT IN(SELECT installation_id FROM subscriptions)",
     ).bind(now - 90 * 86400),
-    env.DB.prepare("DELETE FROM trains WHERE service_date<?").bind(
+    env.DB.prepare("DELETE FROM train_feeds WHERE service_date<?").bind(
       new Date((now - 14 * 86400) * 1000).toISOString().slice(0, 10),
     ),
   ]);

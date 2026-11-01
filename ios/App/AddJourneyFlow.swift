@@ -6,6 +6,7 @@ struct AddJourneyFlow: View {
   var initialTrain: TrainSnapshot?
   var initialJourney: Journey?
   @Environment(\.dismiss) private var dismiss
+  @State private var initialized = false
   @State private var step = 0
   @State private var planningPart = 0
   @State private var chosenTrain: TrainSnapshot?
@@ -41,21 +42,23 @@ struct AddJourneyFlow: View {
     return legs.last?.alightingCode
   }
   private struct CandidateRequest: Hashable, Sendable {
-    var trains: [TrainSnapshot]
+    var revision: Int
+    var active: Bool
     var date: String
     var previous: TrainLeg?
   }
   @State private var candidateIndex = TrainSearchIndex(trains: [])
   @State private var appliedQuery = ""
+  @State private var matchingCandidates: [TrainSnapshot] = []
   @State private var indexing = true
   @State private var preparedRequest: CandidateRequest?
   private var candidateRequest: CandidateRequest {
-    CandidateRequest(trains: store.trains, date: serviceDate,
+    CandidateRequest(revision: store.trainDataRevision, active: step == 0 && (initialJourney == nil || initialized), date: serviceDate,
       previous: editingIndex == nil ? legs.last : nil)
   }
   private var candidates: [TrainSnapshot] {
     guard preparedRequest == candidateRequest else { return [] }
-    return candidateIndex.search(appliedQuery).filter {
+    return matchingCandidates.filter {
       !notDepartedOnly || $0.originServiceDate != serviceDate || !$0.departed
     }
   }
@@ -64,19 +67,17 @@ struct AddJourneyFlow: View {
       ScrollViewReader { proxy in
         ScrollView {
           VStack(alignment: .leading, spacing: 22) {
-            HStack {
-              Text("\(initialJourney == nil ? "添加行程" : "编辑行程") · \(step == 3 ? 3 : step < 2 ? 1 : 2)/3").font(.system(size: 10))
-                .foregroundStyle(VIATheme.muted)
-              Spacer()
-              if step <= 3 {
+            if initialJourney == nil {
+              HStack {
+                Text("添加行程 · \(step == 3 ? 3 : step < 2 ? 1 : 2)/3")
+                  .font(.caption).foregroundStyle(VIATheme.muted)
+                Spacer()
                 HStack(spacing: 5) {
                   ForEach(0..<3) { index in
-                    Capsule().fill(
-                      index < (step < 2 ? 1 : step == 2 ? 2 : 3) ? VIATheme.yellow : VIATheme.line
-                    ).frame(
-                      width: 18, height: 3)
+                    Capsule().fill(index < (step < 2 ? 1 : step == 2 ? 2 : 3) ? VIATheme.yellow : VIATheme.line)
+                      .frame(width: 18, height: 3)
                   }
-                }
+                }.accessibilityHidden(true)
               }
             }
             if step == 0 {
@@ -100,17 +101,18 @@ struct AddJourneyFlow: View {
           .toolbar(.hidden, for: .navigationBar)
           .safeAreaInset(edge: .top, spacing: 0) {
             VIANavigationBar(
-              title: step == 0
-                ? "添加行程"
+              title: initialJourney != nil && step == 3 ? "编辑行程" : step == 0
+                ? "选择列车"
                 : step == 1 ? "乘车区间" : step == 2 ? (planningPart == 0 ? "规划时间" : "前往耗时") : "确认行程",
-              back: step == 0 ? (legs.isEmpty ? "取消" : "返回") : "返回",
+              back: initialJourney != nil && step == 3 ? "关闭" : step == 0 ? (legs.isEmpty ? "取消" : "返回") : "返回",
               onBack: {
-                if step == 0 && legs.isEmpty { requestCancel() }
+                if initialJourney != nil && step == 3 { requestCancel() }
+                else if step == 0 && legs.isEmpty { requestCancel() }
                 else if step == 0 { step = 3 }
                 else { back() }
               }
             ) {
-              if step > 0 || !legs.isEmpty { Button("取消") { requestCancel() } }
+              if !(initialJourney != nil && step == 3) && (step > 0 || !legs.isEmpty) { Button("取消") { requestCancel() } }
             }
           }
           .safeAreaInset(edge: .bottom, spacing: 0) { footer }
@@ -150,6 +152,8 @@ struct AddJourneyFlow: View {
             Text("目标日期的部分站点时刻出现两次，请确认参考时刻映射。不存在的时刻仍无法借用。")
           }
           .task {
+            guard !initialized else { return }
+            initialized = true
             if let j = initialJourney {
               legs = j.legs
               minutes = j.travelToStationMinutes
@@ -159,21 +163,26 @@ struct AddJourneyFlow: View {
               date = Time.parse(initialTrain.originServiceDate + "T12:00:00-05:00") ?? date
               pick(initialTrain)
             }
-            if let scenario = store.qaScenario { configurePreview(scenario) }
-            if store.trains.isEmpty { await store.refresh() }
+            if initialJourney == nil, let scenario = store.qaScenario { configurePreview(scenario) }
+            if initialJourney == nil && store.trains.isEmpty { await store.refresh() }
           }
       }
     }.presentationDetents([.large]).presentationCornerRadius(28)
       .interactiveDismissDisabled()
       .task(id: candidateRequest) {
         let request = candidateRequest
+        guard request.active else { return }
+        let snapshots = store.trains
+        let previousIndex = candidateIndex
         indexing = true
         let work = Task.detached(priority: .userInitiated) {
-          TrainSearchIndex.candidates(trains: request.trains, serviceDate: request.date, previous: request.previous)
+          TrainSearchIndex.candidates(trains: snapshots, serviceDate: request.date,
+            previous: request.previous, reusing: previousIndex)
         }
-        let index = await work.value
+        let index = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
         guard !Task.isCancelled else { return }
         candidateIndex = index
+        matchingCandidates = index.search(appliedQuery)
         preparedRequest = request
         indexing = false
       }
@@ -183,6 +192,7 @@ struct AddJourneyFlow: View {
         }
         guard !Task.isCancelled else { return }
         appliedQuery = query
+        matchingCandidates = candidateIndex.search(query)
       }
   }
   private var searchStep: some View {
@@ -403,8 +413,8 @@ struct AddJourneyFlow: View {
   }
   private var reviewStep: some View {
     VStack(alignment: .leading, spacing: 20) {
-      Text(legs.count > 1 ? "确认换乘行程" : "确认行程").font(.system(size: 32, weight: .semibold))
-      Text("核对乘车区间和计划出门时间。").font(.system(size: 13)).foregroundStyle(VIATheme.muted)
+      Text(initialJourney != nil ? "调整行程安排" : legs.count > 1 ? "确认换乘行程" : "确认行程").font(.system(size: 32, weight: .semibold))
+      Text(initialJourney != nil ? "修改乘车区间、出门安排或行程名称，保存后生效。" : "核对乘车区间和计划出门时间。").font(.system(size: 13)).foregroundStyle(VIATheme.muted)
       ForEach(Array(legs.enumerated()), id: \.element.id) { i, leg in
         VIACard(padding: 17, spacing: 16) {
           HStack {
@@ -412,15 +422,8 @@ struct AddJourneyFlow: View {
               .system(size: 12, weight: .semibold))
             Spacer()
             Button("修改") {
-              editingIndex = i
-              selected = leg.snapshot
-              selectedSource = leg.source
-              referenceID = leg.referenceInstanceID
-              boarding = leg.boardingIndex
-              alighting = leg.alightingIndex
-              planning = Date(timeIntervalSince1970: leg.planningDeparture)
-              step = 1
-            }.font(.system(size: 12)).foregroundStyle(VIATheme.accent)
+              editLeg(i, at: 1)
+            }.font(.subheadline).frame(minWidth: 44, minHeight: 44).foregroundStyle(VIATheme.accent)
           }
           Text("\(leg.boarding?.name ?? "")  →  \(leg.alighting?.name ?? "")")
             .font(.system(size: 22, weight: .semibold)).tracking(-0.7)
@@ -480,8 +483,10 @@ struct AddJourneyFlow: View {
             Spacer()
             Text("\(minutes) 分钟")
           }.frame(minHeight: 55)
-          VIADivider()
+          Button("调整出门安排", systemImage: "clock") { editLeg(0, at: 2) }
+            .frame(minHeight: 44).foregroundStyle(VIATheme.accent)
           if initialJourney == nil {
+            VIADivider()
             Toggle("实时活动", isOn: $startOnSave).tint(VIATheme.yellow).frame(minHeight: 55)
           }
         }.font(.system(size: 14))
@@ -493,11 +498,25 @@ struct AddJourneyFlow: View {
         if let last = legs.last?.alighting?.arrival?.scheduledDate { date = last }
         step = 0
       }.buttonStyle(SecondaryButtonStyle()).disabled(legs.count >= 16)
+      Text("行程名称").font(.subheadline.weight(.medium))
       TextField("行程名称（可选）", text: $name).font(.system(size: 14))
         .submitLabel(.done).focused($fieldFocused).padding(16)
         .background(VIATheme.surface, in: RoundedRectangle(cornerRadius: 14))
       Notice(text: "实时活动最长持续 8 小时。到期后可打开 App 续开。")
     }
+  }
+  private func editLeg(_ index: Int, at destination: Int) {
+    guard legs.indices.contains(index) else { return }
+    let leg = legs[index]
+    editingIndex = index
+    selected = leg.snapshot
+    selectedSource = leg.source
+    referenceID = leg.referenceInstanceID
+    boarding = leg.boardingIndex
+    alighting = leg.alightingIndex
+    planning = Date(timeIntervalSince1970: leg.planningDeparture)
+    planningPart = 0
+    step = destination
   }
   private func pick(_ train: TrainSnapshot, repeatedTime: ReferenceSchedule.RepeatedTime? = nil) {
     do {

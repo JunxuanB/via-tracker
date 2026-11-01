@@ -266,17 +266,22 @@ public enum Time {
 public struct TrainSearchIndex: Sendable {
   private struct Entry: Sendable {
     var train: TrainSnapshot
+    var source: String
     var text: String
   }
   private var entries: [Entry]
-  public init(trains: [TrainSnapshot]) {
+  public init(trains: [TrainSnapshot], reusing previous: TrainSearchIndex? = nil) {
+    var cached: [String: Entry] = [:]
+    for entry in previous?.entries ?? [] { cached[entry.train.id] = entry }
     entries = trains.sorted {
       if $0.trainNumber == $1.trainNumber { return $0.originServiceDate > $1.originServiceDate }
       return $0.trainNumber.localizedStandardCompare($1.trainNumber) == .orderedAscending
     }.map { train in
       let names = train.calls.map { "\($0.name) \($0.code)" }.joined(separator: " ")
-      return Entry(train: train,
-        text: Self.normalized("VIA \(train.trainNumber) \(train.from) \(train.to) \(names)"))
+      let source = "VIA \(train.trainNumber) \(train.from) \(train.to) \(names)"
+      let text = cached[train.id].flatMap { $0.source == source ? $0.text : nil }
+        ?? Self.normalized(source)
+      return Entry(train: train, source: source, text: text)
     }
   }
   public static func normalized(_ value: String) -> String {
@@ -284,14 +289,17 @@ public struct TrainSearchIndex: Sendable {
       locale: Locale(identifier: "en_US_POSIX"))
       .components(separatedBy: CharacterSet.alphanumerics.inverted).filter { !$0.isEmpty }.joined(separator: " ")
   }
-  public func search(_ query: String) -> [TrainSnapshot] {
+  public func search(_ query: String, serviceDate: String? = nil) -> [TrainSnapshot] {
     let terms = Self.normalized(query)
       .replacingOccurrences(of: "quebec city", with: "quebec")
       .replacingOccurrences(of: "ville de quebec", with: "quebec").split(separator: " ")
-    return entries.filter { entry in terms.allSatisfy { entry.text.contains($0) } }.map(\.train)
+    return entries.filter { entry in
+      (serviceDate == nil || entry.train.originServiceDate == serviceDate)
+        && terms.allSatisfy { entry.text.contains($0) }
+    }.map(\.train)
   }
   public static func candidates(trains: [TrainSnapshot], serviceDate: String,
-    previous: TrainLeg?) -> TrainSearchIndex {
+    previous: TrainLeg?, reusing index: TrainSearchIndex? = nil) -> TrainSearchIndex {
     let target = Time.parse(serviceDate + "T12:00:00Z") ?? .distantPast
     let groups = Dictionary(grouping: trains, by: \.trainNumber)
     let selected = groups.values.compactMap { values -> TrainSnapshot? in
@@ -309,6 +317,6 @@ public struct TrainSearchIndex: Sendable {
           && snapshot.calls.contains { $0.index > call.index && $0.arrival != nil }
       }
     }
-    return TrainSearchIndex(trains: selected)
+    return TrainSearchIndex(trains: selected, reusing: index)
   }
 }

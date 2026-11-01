@@ -67,8 +67,17 @@ import TrackerCore
     if let current, live.contains(where: { $0.id == current.id }) { return }
     if let old = current {
       clearCurrent()
+      if old.activityState == .dismissed { await old.end(nil, dismissalPolicy: .immediate) }
+      guard generation == expectedGeneration, !isChanging else { return }
       report("实时活动已关闭，点「开启实时活动」即可重新显示。", journeyID: old.attributes.journeyID)
     }
+    // A dismissed card can remain in ActivityKit's registry. End it explicitly
+    // before dropping the handle so a subsequent request starts a fresh session.
+    for activity in existing where activity.attributes.testSource == testSource
+      && activity.activityState == .dismissed {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+    guard generation == expectedGeneration, !isChanging else { return }
     if let activity = live.first { attach(activity) }
   }
   func start(_ journey: Journey) async {
@@ -91,6 +100,14 @@ import TrackerCore
     // Clear the old session before requesting a new token, including an activity dismissed outside the app.
     await finishCurrent()
     guard generation == operation else { return }
+    let remaining = Activity<JourneyActivityAttributes>.activities.filter {
+      $0.attributes.testSource == testSource
+    }
+    for activity in remaining {
+      guard generation == operation else { return }
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+    guard generation == operation else { return }
     do {
       let activity = try Activity.request(
         attributes: JourneyActivityAttributes(journeyID: journey.id, testSource: testSource),
@@ -102,7 +119,7 @@ import TrackerCore
       attach(activity)
       report("已开启，可在锁定屏幕查看行程。", journeyID: journey.id)
     } catch {
-      report("暂时无法开启，请稍后重试；也可检查系统的实时活动设置。", journeyID: journey.id)
+      report("暂时无法开启：\(error.localizedDescription)。请检查系统的实时活动设置后重试。", journeyID: journey.id)
     }
   }
   private func clearCurrent() {
@@ -141,6 +158,8 @@ import TrackerCore
         guard let self, !Task.isCancelled, self.current?.id == activity.id else { return }
         if state == .ended || state == .dismissed {
           self.clearCurrent()
+          if state == .dismissed { await activity.end(nil, dismissalPolicy: .immediate) }
+          guard self.current == nil else { return }
           self.report("实时活动已关闭，点「开启实时活动」即可重新显示。", journeyID: activity.attributes.journeyID)
           return
         }
@@ -153,6 +172,8 @@ import TrackerCore
     else { return }
     guard current.activityState == .active || current.activityState == .stale else {
       clearCurrent()
+      if current.activityState == .dismissed { await current.end(nil, dismissalPolicy: .immediate) }
+      guard self.current == nil else { return }
       report("实时活动已关闭，可以重新开启。", journeyID: journey.id)
       return
     }

@@ -1,3 +1,4 @@
+import { initialMilestoneState } from "./milestones.ts";
 import { APIError, boundedJSON, obj, str, int, json, sha256 } from "./http.ts";
 import { validateJourney, validateActivity } from "./validation.ts";
 import {
@@ -170,13 +171,26 @@ export async function route(request: Request, env: Env): Promise<Response> {
       env,
     );
     await env.DB.prepare(
-      "UPDATE installations SET push_token=CASE WHEN environment=? THEN push_token ELSE NULL END,environment=?,updated_at=? WHERE id=?",
+      "UPDATE installations SET push_token=CASE WHEN environment=? THEN push_token ELSE NULL END,widget_token=CASE WHEN environment=? THEN widget_token ELSE NULL END,environment=?,updated_at=? WHERE id=?",
     )
-      .bind(environment, environment, Math.floor(Date.now() / 1000), owner)
+      .bind(environment, environment, environment, Math.floor(Date.now() / 1000), owner)
       .run();
     return json({ id: owner }, 201);
   }
   const owner = await authenticate(request, env);
+  if (path === "/v1/widget-token" && (method === "PUT" || method === "DELETE")) {
+    if (method === "DELETE") {
+      await env.DB.prepare("UPDATE installations SET widget_token=NULL,widget_state=NULL WHERE id=?").bind(owner).run();
+    } else {
+      const body = obj(await boundedJSON(request)), token = str(body.token, 512);
+      if (!/^[a-fA-F0-9]{32,512}$/.test(token) || token.length % 2) throw new APIError(400, "invalid_push_token");
+      if (body.environment !== "sandbox" && body.environment !== "production") throw new APIError(400, "invalid_environment");
+      const updated = await env.DB.prepare("UPDATE installations SET widget_state=CASE WHEN widget_token=? THEN widget_state ELSE NULL END,widget_token=? WHERE id=? AND environment=?")
+        .bind(token, token, owner, body.environment).run();
+      if (!updated.meta.changes) throw new APIError(409, "environment_mismatch");
+    }
+    return json({ id: owner });
+  }
   if (path === "/v1/installations" && method === "PATCH") {
     const body = obj(await boundedJSON(request)),
       token = body.pushToken == null ? null : str(body.pushToken, 512);
@@ -186,9 +200,9 @@ export async function route(request: Request, env: Env): Promise<Response> {
     if (environment !== "sandbox" && environment !== "production")
       throw new APIError(400, "invalid_environment");
     await env.DB.prepare(
-      "UPDATE installations SET push_token=?,environment=?,updated_at=? WHERE id=?",
+      "UPDATE installations SET push_token=?,widget_token=CASE WHEN environment=? THEN widget_token ELSE NULL END,environment=?,updated_at=? WHERE id=?",
     )
-      .bind(token, environment, Math.floor(Date.now() / 1000), owner)
+      .bind(token, environment, environment, Math.floor(Date.now() / 1000), owner)
       .run();
     return json({ id: owner });
   }
@@ -249,7 +263,7 @@ export async function route(request: Request, env: Env): Promise<Response> {
       );
     const activityJSON = activity ? JSON.stringify(activity) : null;
     await env.DB.prepare(
-      "INSERT INTO subscriptions(id,installation_id,revision,journey,activity,expires_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,journey=excluded.journey,activity=excluded.activity,expires_at=excluded.expires_at,updated_at=excluded.updated_at,last_sent=CASE WHEN subscriptions.activity IS excluded.activity THEN subscriptions.last_sent ELSE NULL END WHERE subscriptions.installation_id=excluded.installation_id AND excluded.revision>subscriptions.revision",
+      "INSERT INTO subscriptions(id,installation_id,revision,journey,activity,expires_at,updated_at,milestone_state) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,journey=excluded.journey,activity=excluded.activity,expires_at=excluded.expires_at,updated_at=excluded.updated_at,last_sent=CASE WHEN subscriptions.activity IS excluded.activity THEN subscriptions.last_sent ELSE NULL END WHERE subscriptions.installation_id=excluded.installation_id AND excluded.revision>subscriptions.revision",
     )
       .bind(
         id,
@@ -259,6 +273,7 @@ export async function route(request: Request, env: Env): Promise<Response> {
         activityJSON,
         expires,
         Date.now(),
+        initialMilestoneState(journey, Math.floor(Date.now() / 1000)),
       )
       .run();
     // The preflight read may race another write; acknowledge only the stored winner.

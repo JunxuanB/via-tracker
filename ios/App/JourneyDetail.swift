@@ -76,6 +76,16 @@ struct JourneyDetail: View {
               }
             }
             if j.currentLeg?.source == .reference { Notice(text: "暂未查到这一天的班次，先用参考时刻安排。") }
+            if store.isTestMode && j.manualPhase != nil && !j.completed {
+              VIACard(tinted: true) {
+                Text("当前使用手动设置的行程状态").font(.subheadline)
+                Button("恢复自动更新") {
+                  guard var saved = store.journeys.first(where: { $0.id == id }) else { return }
+                  saved.manualPhase = nil
+                  store.save(saved)
+                }.frame(minHeight: 44)
+              }
+            }
             let phase = Projection.state(j, now: now)?.phase
             if phase == .completed {
               VIACard {
@@ -85,7 +95,8 @@ struct JourneyDetail: View {
               }
             } else if phase != .riding {
               phaseSteps(phase)
-              hero(j)
+              passengerControls(j, phase: phase)
+              hero(j, now: now)
               phaseInformation(j, phase: phase)
               timeline(j, now: now)
               connections(j, now: now)
@@ -94,7 +105,7 @@ struct JourneyDetail: View {
               if sizeClass == .regular && contentWidth >= 800 {
                 HStack(alignment: .top, spacing: 24) {
                   VStack(spacing: 20) {
-                    hero(j)
+                    hero(j, now: now)
                     map(j)
                   }.frame(maxWidth: .infinity)
                   VStack(spacing: 20) {
@@ -103,7 +114,7 @@ struct JourneyDetail: View {
                   }.frame(maxWidth: .infinity)
                 }
               } else {
-                hero(j)
+                hero(j, now: now)
                 timeline(j, now: now)
                 connections(j, now: now)
                 map(j)
@@ -145,8 +156,10 @@ struct JourneyDetail: View {
       ) {
         Menu {
           Button("编辑行程", systemImage: "slider.horizontal.3") { editing = true }
-          Button("更正行程状态", systemImage: "hand.tap") { correcting = true }
-          if let j = journey {
+          if store.isTestMode {
+            Button("更正行程状态", systemImage: "hand.tap") { correcting = true }
+          }
+          if let j = journey, !j.completed, !j.trackingEnded {
             Button("设为主行程", systemImage: "location.fill") { store.setPrimary(j) }
           }
           Button("结束追踪", systemImage: "stop.circle", role: .destructive) { ending = true }
@@ -162,11 +175,11 @@ struct JourneyDetail: View {
       }
     }
     .task {
-      if store.qaScenario == "correct-stage" { correcting = true }
+      if store.isTestMode && store.qaScenario == "correct-stage" { correcting = true }
       if store.qaScenario == "end-confirm" { ending = true }
     }
     .confirmationDialog("更正行程状态", isPresented: $correcting, titleVisibility: .visible) {
-      if let j = journey {
+      if store.isTestMode, let j = journey {
         ForEach(Phase.allCases.filter { $0 != .transferring || j.currentLegIndex > 0 }, id: \.self)
         { phase in
           Button(phase.title) {
@@ -216,6 +229,13 @@ struct JourneyDetail: View {
     if phase == .transferring { return "在 \(station) 换乘" }
     return "前往 \(j.legs.last?.alighting?.name ?? "")"
   }
+  @ViewBuilder private func passengerControls(_ j: Journey, phase: Phase?) -> some View {
+    if !j.trackingEnded && (phase == .beforeDeparture || phase == .onTheWay) {
+      Button(phase == .beforeDeparture ? "我已出门，前往车站" : "我已到达车站") {
+        store.confirmPassengerProgress(id, to: phase == .beforeDeparture ? .onTheWay : .waiting)
+      }.buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("confirm-passenger-progress")
+    }
+  }
   private func phaseSteps(_ phase: Phase?) -> some View {
     HStack(spacing: 6) {
       ForEach([Phase.beforeDeparture, .onTheWay, .waiting, .riding], id: \.self) { item in
@@ -236,11 +256,12 @@ struct JourneyDetail: View {
         }.frame(minHeight: 48)
         VIADivider()
         HStack {
-          Label("火车计划发车", systemImage: "tram.fill")
+          Label(phase != .beforeDeparture && leg.boarding?.departure?.estimatedDate != nil
+            ? "火车预计发车" : "火车计划发车", systemImage: "tram.fill")
           Spacer()
           Text(
             Time.format(
-              leg.boarding?.departure?.scheduledDate,
+              phase == .beforeDeparture ? leg.boarding?.departure?.scheduledDate : leg.boarding?.departure?.effectiveDate,
               zone: leg.boarding?.timeZone ?? "America/Toronto"))
         }.frame(minHeight: 48)
         VIADivider()
@@ -258,10 +279,8 @@ struct JourneyDetail: View {
       if phase == .waiting { Notice(text: "预计时间可能变化，请留意车站广播和登车安排。", symbol: "bell") }
     }
   }
-  private func hero(_ j: Journey) -> some View {
-    TimelineView(.periodic(from: .now, by: 1)) { context in
-      JourneyHero(journey: j, now: store.qaDate ?? context.date, frozen: store.qaScenario != nil)
-    }
+  private func hero(_ j: Journey, now: Date) -> some View {
+    JourneyHero(journey: j, now: now, frozen: store.qaScenario != nil)
   }
   @ViewBuilder private func timeline(_ j: Journey, now: Date) -> some View {
     if let leg = j.currentLeg {
@@ -340,10 +359,9 @@ struct JourneyDetail: View {
             activityActionPending = true
             Task {
               defer { activityActionPending = false }
-              let closing = store.activities.journeyID == j.id
-              if closing {
-                await store.activities.restore()
-                if store.activities.journeyID == j.id { await store.activities.end() }
+              await store.activities.restore()
+              if store.activities.journeyID == j.id {
+                await store.activities.end()
               } else {
                 await store.startActivity(j)
               }
@@ -378,13 +396,12 @@ struct StationTimeline: View {
         && (alightingIndex == nil || $0.index <= alightingIndex!)
     }
   }
-  private var nextIndex: Int? {
-    guard riding else { return boardingIndex }
-    return visibleCalls.first {
-      $0.reached != true && (($0.arrival ?? $0.departure)?.effectiveDate.map { $0 > now } ?? false)
-    }?.index
-  }
   var body: some View {
+    let visibleCalls = visibleCalls
+    let lastIndex = visibleCalls.last?.index
+    let nextIndex = riding ? visibleCalls.first {
+      $0.reached != true && (($0.arrival ?? $0.departure)?.effectiveDate.map { $0 > now } ?? false)
+    }?.index : boardingIndex
     VStack(spacing: 0) {
       ForEach(visibleCalls) { call in
         let rawEvent = call.index == boardingIndex ? call.departure : call.arrival ?? call.departure
@@ -393,7 +410,7 @@ struct StationTimeline: View {
         let current = call.index == nextIndex
         HStack(alignment: .top, spacing: 9) {
           ZStack(alignment: .top) {
-            if call.index != visibleCalls.last?.index {
+            if call.index != lastIndex {
               Rectangle().fill(passed ? VIATheme.yellow : VIATheme.line).frame(width: 2).padding(
                 .top, 9)
             }

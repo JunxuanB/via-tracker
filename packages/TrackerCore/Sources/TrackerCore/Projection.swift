@@ -18,21 +18,22 @@ public struct ActivityState: Codable, Hashable, Sendable {
   public var nextTrainNumber: String?
   public var nextDepartureEpoch: Double?
   public var connectionMinutes: Int?
+  public var progressStartEpoch: Double? = nil
   public var targetDate: Date { Date(timeIntervalSince1970: targetEpoch) }
   public var elapsedTitle: String {
     switch phase {
     case .beforeDeparture: "该出门了"
-    case .onTheWay, .waiting, .transferring: "即将发车"
+    case .onTheWay, .waiting, .transferring: "已到发车时间"
     case .riding, .completed: "已到达"
     }
   }
   public var countdownLabel: String {
     switch phase {
     case .beforeDeparture: "距计划出门"
-    case .onTheWay: "距发车"
+    case .onTheWay: targetIsEstimate ? "距预计发车" : "距计划发车"
     case .waiting: targetIsEstimate ? "距预计发车" : "距计划发车"
     case .riding: "距 \(destination) \(targetIsEstimate ? "预计" : "计划")到达"
-    case .transferring: "距下一段计划发车"
+    case .transferring: targetIsEstimate ? "距下一段预计发车" : "距下一段计划发车"
     case .completed: "已到达 \(destination)"
     }
   }
@@ -63,22 +64,25 @@ public enum Projection {
     let arr = l.alighting?.arrival?.scheduledDate?.timeIntervalSince1970 ?? dep
     let estArr = l.alighting?.arrival?.estimatedDate?.timeIntervalSince1970 ?? arr
     let leave = j.plannedLeaveAt.timeIntervalSince1970
+    // Passenger confirmations only apply until the latest departure time.
+    let manualPhase = (j.manualPhase == .onTheWay || j.manualPhase == .waiting) && t >= estDep
+      ? nil : j.manualPhase
     let phase: Phase =
       j.completed
       ? .completed
-      : j.manualPhase
+      : manualPhase
         ?? (t >= estDep ? .riding : i > 0
           ? .transferring : t < leave ? .beforeDeparture : t < dep - 900 ? .onTheWay : .waiting)
     let target: Double =
       switch phase {
       case .beforeDeparture: leave
-      case .onTheWay, .transferring: dep
+      case .onTheWay, .transferring: estDep
       case .waiting: estDep
       case .riding, .completed: estArr
       }
     let fetched = Time.parse(l.snapshot.sourceFetchedAt)?.timeIntervalSince1970 ?? 0
     let next = j.legs.indices.contains(i + 1) ? j.legs[i + 1] : nil
-    let nextDep = next?.boarding?.departure?.scheduledDate?.timeIntervalSince1970
+    let nextDep = next?.boarding?.departure?.effectiveDate?.timeIntervalSince1970
     return ActivityState(
       phase: phase, trainNumber: l.trainNumber, destination: l.alighting?.name ?? l.alightingCode,
       origin: l.boarding?.name ?? l.boardingCode, targetEpoch: target,
@@ -89,9 +93,26 @@ public enum Projection {
       reference: l.source == .reference,
       targetIsEstimate: phase == .riding
         ? l.alighting?.arrival?.estimatedDate != nil
-        : phase == .waiting && l.boarding?.departure?.estimatedDate != nil,
+        : (phase == .onTheWay || phase == .waiting || phase == .transferring) && l.boarding?.departure?.estimatedDate != nil,
       nextTrainNumber: next?.trainNumber,
-      nextDepartureEpoch: nextDep, connectionMinutes: nextDep.map { Int(($0 - estArr) / 60) })
+      nextDepartureEpoch: nextDep, connectionMinutes: nextDep.map { Int(($0 - estArr) / 60) },
+      progressStartEpoch: estDep)
+  }
+  /// Only adjacent passenger confirmations are available outside the test override menu.
+  public static func confirmingPassengerProgress(_ journey: Journey, to phase: Phase, now: Date = Date()) -> Journey? {
+    guard !journey.trackingEnded, let current = state(journey, now: now)?.phase,
+      (current == .beforeDeparture && phase == .onTheWay)
+        || (current == .onTheWay && phase == .waiting) else { return nil }
+    var result = journey
+    result.manualPhase = phase
+    return result
+  }
+  /// Every known local transition, including later legs, can be scheduled without another fetch.
+  public static func timelineDates(_ journey: Journey) -> [Date] {
+    [journey.plannedLeaveAt] + journey.legs.flatMap { leg -> [Date] in
+      [leg.boarding?.departure?.scheduledDate?.addingTimeInterval(-900),
+       leg.boarding?.departure?.effectiveDate, leg.alighting?.arrival?.effectiveDate].compactMap { $0 }
+    }
   }
   public static func reconcile(_ journey: Journey, snapshots: [TrainSnapshot]) -> Journey {
     var j = journey

@@ -1,9 +1,10 @@
 import { authenticate, route } from './index.ts';
 import { APIError, boundedJSON, json, obj, sha256 } from './http.ts';
 import { normalize } from './normalize.ts';
+import { feedStatements } from './train-feed.ts';
 import { processSubscriptions, type DeliveryObservation } from './service.ts';
 import { sendAPNs } from './apns.ts';
-import { seed, validate, editTrain, modes, type Feed, type Mode } from './test-data.ts';
+import { seed, validate, datedFeed, editTrain, TestDataError, modes, type Feed, type Mode } from './test-data.ts';
 import sample from '../../contracts/fixtures/via-observed.json';
 
 type State = { raw: string | null; mode: Mode; revision: number; last_action: string; last_read: string | null; feed_reads: number };
@@ -27,9 +28,9 @@ async function saveState(env: Env, old: State, raw: Feed, mode: Mode, action: st
     .bind(old.revision, old.raw, old.mode, token));
   if (mode === 'healthy' || mode === 'stale') {
     const trains = normalize(raw, fetched, version);
-    statements.push(env.DB.prepare('DELETE FROM trains WHERE EXISTS(SELECT 1 FROM test_state WHERE write_token=?)').bind(token));
-    for (const train of trains) statements.push(env.DB.prepare('INSERT INTO trains(id,number,service_date,snapshot,fetched_at) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM test_state WHERE write_token=?)')
-      .bind(train.id, train.trainNumber, train.originServiceDate, JSON.stringify(train), fetched, token));
+    // Edits replace the draft so deleted trains disappear; heartbeats only renew it.
+    if (!heartbeat) statements.push(env.DB.prepare('DELETE FROM train_feeds WHERE EXISTS(SELECT 1 FROM test_state WHERE id=1 AND write_token=?)').bind(token));
+    statements.push(...feedStatements(env.DB, trains, fetched, 'test', token));
     statements.push(env.DB.prepare('UPDATE source_state SET version=?,fetched_at=?,status=? WHERE id=1 AND EXISTS(SELECT 1 FROM test_state WHERE write_token=?)')
       .bind(version, fetched, mode, token));
   } else {
@@ -68,10 +69,10 @@ async function handle(request: Request, env: Cloudflare.TestEnv, ctx: ExecutionC
     ? await readState(env) : undefined;
   if (request.method === 'GET' && (path === '/control/state' || path === '/control/status')) {
     const status = await summary(env, state!);
-    return json(path.endsWith('/state') ? { ...status, raw: JSON.parse(state!.raw!),
+    return json(path.endsWith('/state') ? { ...status, raw: datedFeed(JSON.parse(state!.raw!)),
       undoCount: (await env.DB.prepare('SELECT count(*) AS count FROM test_history').first<{ count: number }>())?.count ?? 0 } : status);
   }
-  if (request.method === 'GET' && path === '/control/export') return json(JSON.parse(state!.raw!), 200,
+  if (request.method === 'GET' && path === '/control/export') return json(datedFeed(JSON.parse(state!.raw!)), 200,
     { 'content-disposition': 'attachment; filename="via-public-test-data.json"' });
   if (request.method === 'POST' && path.startsWith('/control')) {
     // The panel is deliberately public. Same-origin and size checks prevent accidental cross-site writes.
@@ -98,7 +99,7 @@ async function handle(request: Request, env: Cloudflare.TestEnv, ctx: ExecutionC
     }
     if (path !== '/control') throw new APIError(404, 'not_found');
     if (input.revision !== state!.revision) throw new APIError(409, 'revision_conflict');
-    let raw: Feed = JSON.parse(state!.raw!), mode = state!.mode;
+    let raw: Feed = datedFeed(JSON.parse(state!.raw!)), mode = state!.mode;
     const action = String(input.action);
     let undoRevision: number | undefined;
     if (action === 'reset') { raw = seed(sample as Feed); mode = 'healthy'; }
@@ -113,7 +114,7 @@ async function handle(request: Request, env: Cloudflare.TestEnv, ctx: ExecutionC
     } else raw = editTrain(raw, input);
     const revision = await saveState(env, state!, raw, mode, action, action !== 'undo');
     if (undoRevision !== undefined) await env.DB.prepare('DELETE FROM test_history WHERE revision=?').bind(undoRevision).run();
-    ctx.waitUntil(deliver(env));
+    ctx.waitUntil(deliver(env, true));
     return json({ ok: true, revision });
   }
   if (path === '/v1/test-device') {
@@ -148,6 +149,7 @@ export default {
       headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
       return new Response(response.body, { status: response.status, headers });
     } catch (error) {
+      if (error instanceof TestDataError) return json({ error: { code: 'test_data_invalid', message: error.message } }, 400);
       if (error instanceof APIError) return json({ error: { code: error.code,
         message: error.code === 'revision_conflict' ? '数据已更新，请保存草稿后刷新页面。' : error.code } }, error.status);
       console.error(JSON.stringify({ event: 'test_console_request_failed' }));

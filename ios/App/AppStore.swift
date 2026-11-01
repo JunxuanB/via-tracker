@@ -1,10 +1,11 @@
+import ActivityKit
 import Network
 import CryptoKit
 import SwiftData
 import SwiftUI
 import TrackerCore
 import UserNotifications
-import WidgetKit
+@preconcurrency import WidgetKit
 
 enum AppEnvironment: String, CaseIterable, Sendable {
   case production, test
@@ -77,7 +78,10 @@ struct AppConfiguration: Equatable, Sendable {
   let activities = ActivityManager()
   let api: APIClient
   var journeys: [Journey] = []
-  var trains: [TrainSnapshot] = []
+  var trains: [TrainSnapshot] = [] {
+    didSet { if trains != oldValue { trainDataRevision &+= 1 } }
+  }
+  private(set) var trainDataRevision = 0
   var feed: TrainEnvelope?
   var isRefreshing = false
   var isStartingActivity = false
@@ -128,20 +132,52 @@ struct AppConfiguration: Equatable, Sendable {
   private var records: [JourneyRecord] = []
   private var syncing = false
   private var syncRequested = false
+  private var lastSubscriptionPull: Date?
+  private var lastWidgetRegistration: Date?
   private var systemServicesReady = false
   private var activatingServices = false
   private var isForeground = false
   private var lastPublished: SharedSnapshot?
   private var monitor: NWPathMonitor?
   private var loop: Task<Void, Never>?
+  private var clockLoop: Task<Void, Never>?
+  private(set) var clockNow = Date()
+  private var finishedDates: [String: Double] = [:]
   private var tokenObserver: NSObjectProtocol?
+  var activeJourneys: [Journey] {
+    journeys.filter { !$0.trackingEnded && Projection.state($0, now: qaDate ?? clockNow)?.phase != .completed }
+      .sorted { ($0.legs.first?.planningDeparture ?? 0) < ($1.legs.first?.planningDeparture ?? 0) }
+  }
+  var historyJourneys: [Journey] {
+    journeys.filter { $0.trackingEnded || Projection.state($0, now: qaDate ?? clockNow)?.phase == .completed }
+      .sorted { finishedDate($0) > finishedDate($1) }
+  }
+  var recentJourneys: [Journey] {
+    historyJourneys.filter { !$0.trackingEnded && (qaDate ?? clockNow).timeIntervalSince(finishedDate($0)) < 86400 }
+  }
+  func finishedDate(_ journey: Journey) -> Date {
+    if let epoch = finishedDates[journey.id] { return Date(timeIntervalSince1970: epoch) }
+    return min(qaDate ?? clockNow, journey.legs.last?.alighting?.arrival?.effectiveDate ?? (qaDate ?? clockNow))
+  }
   var primaryJourney: Journey? {
-    if let primaryID, let j = journeys.first(where: { $0.id == primaryID }) { return j }
-    return journeys.filter {
-      !$0.trackingEnded && Projection.state($0, now: qaDate ?? Date())?.phase != .completed
-    }.min {
-      abs(($0.legs.first?.planningDeparture ?? 0) - Date().timeIntervalSince1970)
-        < abs(($1.legs.first?.planningDeparture ?? 0) - Date().timeIntervalSince1970)
+    let active = activeJourneys
+    if let primaryID, let journey = active.first(where: { $0.id == primaryID }) { return journey }
+    return active.first
+  }
+  private func updateClock() {
+    clockNow = Date()
+    var dates = finishedDates
+    let ids = Set(journeys.map(\.id))
+    dates = dates.filter { ids.contains($0.key) }
+    for journey in journeys {
+      let finished = journey.trackingEnded || Projection.state(journey, now: qaDate ?? clockNow)?.phase == .completed
+      if finished && dates[journey.id] == nil {
+        dates[journey.id] = (journey.completed || journey.trackingEnded ? (qaDate ?? clockNow) : finishedDate(journey)).timeIntervalSince1970
+      } else if !finished { dates.removeValue(forKey: journey.id) }
+    }
+    if dates != finishedDates {
+      finishedDates = dates
+      if qaScenario == nil { UserDefaults.standard.set(dates, forKey: configuration.defaultsKey("finished-journeys")) }
     }
   }
   var sourceMessage: String? {
@@ -201,6 +237,7 @@ struct AppConfiguration: Equatable, Sendable {
     activities.testSource = configuration.isTest ? apiBaseURL : nil
     if configuration.remotePush { UserDefaults.standard.set(true, forKey: configuration.defaultsKey("push-token-update-pending")) }
     records = (try? context.fetch(FetchDescriptor<JourneyRecord>())) ?? []
+    finishedDates = UserDefaults.standard.dictionary(forKey: configuration.defaultsKey("finished-journeys")) as? [String: Double] ?? [:]
     reloadJourneys()
     if let cached = try? context.fetch(FetchDescriptor<FeedRecord>()).first,
       let value = try? JSONDecoder().decode(TrainEnvelope.self, from: cached.payload)
@@ -271,10 +308,13 @@ struct AppConfiguration: Equatable, Sendable {
     await syncPending()
   }
   private func reloadJourneys() {
-    journeys = records.compactMap(\.journey).sorted { $0.createdAt > $1.createdAt }
+    let latest = records.compactMap(\.journey).sorted { $0.createdAt > $1.createdAt }
+    if latest != journeys { journeys = latest }
+    updateClock()
   }
   @discardableResult
   private func persist() -> Bool {
+    guard context.hasChanges else { return true }
     do {
       try context.save()
       storageError = nil
@@ -288,6 +328,12 @@ struct AppConfiguration: Equatable, Sendable {
       storageError = "本地保存失败：\(error.localizedDescription)"
       return false
     }
+  }
+  func confirmPassengerProgress(_ id: String, to phase: Phase) {
+    guard let saved = journeys.first(where: { $0.id == id }),
+      let changed = Projection.confirmingPassengerProgress(saved, to: phase, now: qaDate ?? Date())
+    else { return }
+    if save(changed) { Task { await refresh() } }
   }
   @discardableResult
   func save(_ journey: Journey) -> Bool {
@@ -372,7 +418,10 @@ struct AppConfiguration: Equatable, Sendable {
   }
   private func publish() {
     guard qaScenario == nil, !shuttingDown else { return }
-    let snapshot = SharedSnapshot(journey: primaryJourney, apiBaseURL: apiBaseURL, testMode: isTestMode)
+    let active = primaryJourney
+    let recent = active == nil ? recentJourneys.first : nil
+    let snapshot = SharedSnapshot(journey: active ?? recent, apiBaseURL: apiBaseURL, testMode: isTestMode,
+      visibleUntil: recent.map { finishedDate($0).addingTimeInterval(86400) })
     guard snapshot != lastPublished else { return }
     do {
       try snapshot.write()
@@ -386,7 +435,27 @@ struct AppConfiguration: Equatable, Sendable {
     guard !active || !shuttingDown else { return }
     isForeground = active
     loop?.cancel()
+    clockLoop?.cancel()
     guard active else { return }
+    // The clock must advance even when the network request fails or takes 25 seconds.
+    clockLoop = Task { [weak self] in
+      while !Task.isCancelled {
+        guard let self else { return }
+        self.updateClock()
+        self.publish()
+        if let id = self.activities.journeyID,
+          let journey = self.journeys.first(where: { $0.id == id }),
+          let state = Projection.state(journey),
+          let previous = self.activities.current?.content.state,
+          state.phase != previous.phase || state.currentLegIndex != previous.currentLegIndex {
+          await self.activities.update(journey)
+        }
+        let now = Date()
+        let next = self.journeys.flatMap { Projection.timelineDates($0) }.filter { $0 > now }.min()
+        let delay = min(15, max(0.1, next?.timeIntervalSince(now) ?? 15))
+        do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+      }
+    }
     loop = Task {
       var failures = 0
       while !Task.isCancelled {
@@ -410,8 +479,9 @@ struct AppConfiguration: Equatable, Sendable {
     isRefreshing = true
     defer { isRefreshing = false }
     do {
-      if let value = try await api.trains(), value.snapshotVersion >= (feed?.snapshotVersion ?? 0) {
-        let data = try JSONEncoder().encode(value)
+      if let response = try await api.trains(), response.envelope.snapshotVersion >= (feed?.snapshotVersion ?? 0) {
+        let value = response.envelope
+        let data = response.data
         if let cached = try context.fetch(FetchDescriptor<FeedRecord>()).first {
           cached.payload = data
         } else {
@@ -488,6 +558,22 @@ struct AppConfiguration: Equatable, Sendable {
   }
   private func syncOnce() async throws {
     try await api.register(environment: Self.apnsEnvironment)
+    try? await api.configureWidgetPush(environment: Self.apnsEnvironment)
+    if lastWidgetRegistration == nil || Date().timeIntervalSince(lastWidgetRegistration!) >= 300 {
+      lastWidgetRegistration = Date()
+      // Widget registration must not delay uploading the Live Activity token.
+      Task { [weak self] in
+        // WidgetCenter is not Sendable in the SDK. Keep its async lookup off the
+        // main actor and transfer only the Sendable token back to the store.
+        let token = await Task.detached(priority: .utility) {
+          let info = await WidgetCenter.shared.currentPushInfo
+          return info?.token
+        }.value
+        guard let token, let self, !self.shuttingDown,
+          let registration = WidgetRegistration.read(), registration.apiBaseURL == self.apiBaseURL else { return }
+        await registration.register(token)
+      }
+    }
     if isTestMode { testDeviceCode = try await api.testDeviceCode() }
     if UserDefaults.standard.bool(forKey: configuration.defaultsKey("push-token-update-pending")) {
       let token = UserDefaults.standard.string(forKey: configuration.defaultsKey("ordinary-push-token"))
@@ -530,16 +616,21 @@ struct AppConfiguration: Equatable, Sendable {
       }
       guard let current = records.first(where: { $0.id == id }),
         current.revision == revision, let local = current.journey else { continue }
-      current.payload = try JSONEncoder().encode(mergeRemote(response.journey, into: local))
+      let merged = mergeRemote(response.journey, into: local)
+      if merged != local { current.payload = try JSONEncoder().encode(merged) }
       current.dirty = false
     }
     // A deletion made while an upload was in flight wins before this pass finishes.
     try await flushDeletions()
+    // Quiet foreground polling should not download every saved journey every three seconds.
+    if ids.isEmpty, let lastSubscriptionPull, Date().timeIntervalSince(lastSubscriptionPull) < 60 { return }
     let values = try await api.subscriptions()
+    lastSubscriptionPull = Date()
     for value in values {
       if let current = records.first(where: { $0.id == value.id }), !current.dirty,
         value.revision == current.revision, let local = current.journey, !local.trackingEnded {
-        current.payload = try JSONEncoder().encode(mergeRemote(value.journey, into: local))
+        let merged = mergeRemote(value.journey, into: local)
+        if merged != local { current.payload = try JSONEncoder().encode(merged) }
       }
     }
   }
@@ -580,6 +671,7 @@ struct AppConfiguration: Equatable, Sendable {
   }
   func prepareForEnvironmentSwitch() async {
     shuttingDown = true
+    WidgetRegistration.clear()
     systemServicesReady = false
     foreground(false)
     monitor?.cancel()
@@ -593,7 +685,7 @@ struct AppConfiguration: Equatable, Sendable {
       remotePush: supportsRemotePush, environment: Self.apnsEnvironment)
     changeEnvironment = nil
   }
-  static var apnsEnvironment: String {
+  static let apnsEnvironment: String = {
     if let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
       let data = try? Data(contentsOf: url), let content = String(data: data, encoding: .isoLatin1),
       let start = content.range(of: "<?xml"), let end = content.range(of: "</plist>"),
@@ -606,6 +698,6 @@ struct AppConfiguration: Equatable, Sendable {
     }
     return Bundle.main.object(forInfoDictionaryKey: "APNSEnvironment") as? String == "development"
       ? "sandbox" : "production"
-  }
+  }()
 }
 extension Notification.Name { static let viaPushToken = Notification.Name("viaPushToken") }

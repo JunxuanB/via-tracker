@@ -4,6 +4,9 @@ const record = (v: unknown): Record<string, unknown> | undefined =>
     ? (v as Record<string, unknown>)
     : undefined;
 const text = (v: unknown) => (typeof v === "string" ? v : undefined);
+// VIA uses number + optional month/day; the test console uses a full dated identity.
+export const trainNumberFromKey = (key: string) =>
+  key.match(/^(\d+)(?:\s+\(\d{2}-\d{2}\)|:\d{4}-\d{2}-\d{2})?$/)?.[1];
 function event(v: unknown): EventTime | undefined {
   const r = record(v),
     scheduled = text(r?.scheduled),
@@ -33,7 +36,7 @@ export function normalize(
   const trains: TrainSnapshot[] = [];
   for (const [rawKey, value] of Object.entries(root)) {
     const r = record(value),
-      number = rawKey.match(/^(\d+)(?:\s+\(\d{2}-\d{2}\))?$/)?.[1];
+      number = trainNumberFromKey(rawKey);
     if (
       !r ||
       !number ||

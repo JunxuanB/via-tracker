@@ -4,29 +4,20 @@ import TrackerCore
 struct SettingsView: View {
   @Bindable var store: AppStore
   @State private var dataDetails = false
+  @State private var aboutDetails = false
   @State private var activityDetails = false
   @State private var appearanceDetails = false
   @State private var environmentDetails = false
   @State private var versionTaps = 0
   @State private var lastVersionTap = Date.distantPast
+  @State private var testToolsExpanded = false
+  @State private var copiedDeviceCode = false
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 17) {
+        if store.isTestMode { testModePanel }
         Text("设置").font(.system(size: 32, weight: .semibold)).tracking(-1.5)
         Text("管理显示、规划与数据。").font(.system(size: 13)).foregroundStyle(VIATheme.muted)
-        if store.isTestMode {
-          let url = store.configuration.baseURL
-          VIACard {
-            Label("正在使用测试数据", systemImage: "wrench.and.screwdriver").font(.headline)
-            Text(store.supportsRemotePush ? "可在网页修改测试数据，锁屏接收实时活动和通知。" : "本地测试数据仅在 App 前台刷新。")
-              .font(.caption)
-            Link("打开网页版测试台", destination: url).frame(minHeight: 44)
-            if let code = store.testDeviceCode {
-              LabeledContent("本机测试编号", value: code).font(.caption).textSelection(.enabled)
-            }
-            Button("切换环境") { environmentDetails = true }.frame(minHeight: 44)
-          }
-        }
         VIASectionLabel(title: "实时活动")
         group {
           Button {
@@ -88,13 +79,16 @@ struct SettingsView: View {
             row("数据来源", value: store.isTestMode ? "测试数据" : "VIA Rail", symbol: "info.circle")
           }
         }
+        Button("关于 Train Tracker 与开源声明", systemImage: "info.circle") {
+          aboutDetails = true
+        }.font(.subheadline).frame(minHeight: 44)
         Button {
           let now = Date()
           versionTaps = now.timeIntervalSince(lastVersionTap) < 3 ? versionTaps + 1 : 1
           lastVersionTap = now
           if versionTaps >= 7 { versionTaps = 0; environmentDetails = true }
         } label: {
-          Text("VIA Tracker \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0") · 非 VIA Rail 官方产品\n无账号 · 行程保存在本机")
+          Text("Train Tracker \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0") · 非 VIA Rail 官方产品\n无账号 · 行程保存在本机")
             .font(.system(size: 10)).lineSpacing(4).foregroundStyle(VIATheme.muted)
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         }.buttonStyle(.plain).padding(.top, 12).accessibilityLabel("版本号，连续点击七次打开环境选择")
@@ -103,6 +97,14 @@ struct SettingsView: View {
     }.viaBackground().toolbar(.hidden, for: .navigationBar)
       .task { await store.checkNotifications() }
       .sheet(isPresented: $environmentDetails) { environmentSheet }
+      .sheet(isPresented: $aboutDetails) {
+        NavigationStack {
+          ScrollView { ProductDeclaration().padding(24).frame(maxWidth: 620).frame(maxWidth: .infinity) }
+            .viaBackground().navigationTitle("关于 Train Tracker")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { Button("完成") { aboutDetails = false } }
+        }
+      }
 
       .confirmationDialog("外观", isPresented: $appearanceDetails, titleVisibility: .visible) {
         Button("跟随系统") { store.appearance = "system" }
@@ -113,10 +115,10 @@ struct SettingsView: View {
         NavigationStack {
           ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-              Notice(text: "划掉实时活动后，可回到行程重新开启。实时活动和普通通知分别控制，开启后可在锁定屏幕查看。")
+              Notice(text: "出门、发车前 15 分钟、发车、换乘到站和最终到达会单独提醒。划掉实时活动不会关闭行程通知；结束追踪会停止提醒。")
               LabeledContent("实时活动", value: store.activities.status)
               LabeledContent("普通通知", value: store.notificationStatus)
-              Button(store.notificationStatus == "尚未请求" ? "允许时刻匹配通知" : "管理通知权限") { notificationAction() }.buttonStyle(
+              Button(store.notificationStatus == "尚未请求" ? "允许行程通知" : "管理通知权限") { notificationAction() }.buttonStyle(
                 SecondaryButtonStyle())
               Button("打开系统设置") { openSettings() }.buttonStyle(PrimaryButtonStyle())
             }.padding(24)
@@ -138,7 +140,7 @@ struct SettingsView: View {
               Button(store.isRefreshing ? "正在刷新…" : "立即刷新") { Task { await store.refresh() } }
                 .buttonStyle(PrimaryButtonStyle()).disabled(store.isRefreshing)
               Text("行程与最近有效数据保存在本机。没有账号和跨设备同步；仅同站换乘，不提供购票或接续保证。")
-              Text("保存行程后，后台保存此安装的行程订阅和推送 token，用于时刻匹配与活动更新。结束追踪会取消该订阅。")
+              Text("保存行程后，后台保存必要的行程与通知信息，用于时刻和实时活动更新。结束追踪即可停止该行程的更新。")
               if let sync = store.syncError { Notice(text: sync) }
               Link("VIA Rail", destination: URL(string: "https://www.viarail.ca")!)
               #if DEBUG
@@ -148,6 +150,48 @@ struct SettingsView: View {
           }.viaBackground().navigationTitle("数据").navigationBarTitleDisplayMode(.inline)
             .toolbar { Button("完成") { dataDetails = false } }
         }.presentationDetents([.medium, .large])
+      }
+  }
+  private var testModePanel: some View {
+    VIACard(tinted: true, padding: 16, spacing: 8) {
+      HStack(spacing: 12) {
+        Label("测试模式", systemImage: "wrench.and.screwdriver").font(.subheadline.bold())
+        Spacer(minLength: 4)
+        Button("切换环境") { environmentDetails = true }
+          .font(.caption.weight(.medium)).frame(minHeight: 44)
+      }
+      Text("正式行程独立保存").font(.caption).foregroundStyle(VIATheme.muted)
+      DisclosureGroup("测试工具", isExpanded: $testToolsExpanded) {
+        VStack(alignment: .leading, spacing: 8) {
+          Link("打开网页版测试台", destination: store.configuration.baseURL).frame(minHeight: 44)
+          ShareLink(item: store.configuration.baseURL) {
+            Label("分享测试台链接", systemImage: "square.and.arrow.up")
+          }.frame(minHeight: 44)
+          if let code = store.testDeviceCode {
+            VStack(alignment: .leading, spacing: 4) {
+              Text("本机编号").font(.caption).foregroundStyle(VIATheme.muted)
+              HStack {
+                Text(code).monospaced().textSelection(.enabled).lineLimit(1).minimumScaleFactor(0.7)
+                Spacer(minLength: 8)
+                Button {
+                  UIPasteboard.general.string = code
+                  copiedDeviceCode = true
+                } label: {
+                  Label(copiedDeviceCode ? "已复制" : "复制", systemImage: copiedDeviceCode ? "checkmark" : "doc.on.doc")
+                    .fixedSize(horizontal: true, vertical: false)
+                }.frame(minWidth: 44, minHeight: 44)
+                  .accessibilityLabel(copiedDeviceCode ? "本机编号已复制" : "复制本机测试编号")
+              }
+            }
+          }
+          Text(store.supportsRemotePush ? "网页修改后可锁屏查看实时活动；按本机编号发送测试通知。" : "本地测试仅在 App 前台刷新。")
+            .font(.caption).foregroundStyle(VIATheme.muted)
+        }.font(.subheadline).padding(.top, 8)
+      }.font(.subheadline)
+    }.accessibilityIdentifier("settings-test-mode")
+      .task(id: copiedDeviceCode) {
+        guard copiedDeviceCode else { return }
+        do { try await Task.sleep(for: .seconds(2)); copiedDeviceCode = false } catch {}
       }
   }
   private var environmentSheet: some View {

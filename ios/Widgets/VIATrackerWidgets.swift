@@ -20,36 +20,24 @@ struct JourneyLiveActivity: Widget {
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          Label("VIA \(context.state.trainNumber)", systemImage: context.state.phase.symbol).font(
-            .headline
-          ).foregroundStyle(viaYellow)
+          IslandTrainLabel(state: context.state)
         }
         DynamicIslandExpandedRegion(.trailing) {
-          Text(context.attributes.testSource == nil ? context.state.phase.title : "测试").font(.caption)
+          IslandStatusLabel(state: context.state, stale: context.isStale,
+            testMode: context.attributes.testSource != nil)
         }
         DynamicIslandExpandedRegion(.bottom) {
-          ActivitySummary(state: context.state, stale: context.isStale, testMode: context.attributes.testSource != nil).padding(.top, 6)
+          IslandExpandedContent(state: context.state, stale: context.isStale)
         }
       } compactLeading: {
         Image(systemName: context.state.phase.symbol).foregroundStyle(viaYellow)
       } compactTrailing: {
-        compactTime(context.state)
+        IslandCompactTime(state: context.state)
       } minimal: {
         Image(systemName: context.state.phase.symbol).foregroundStyle(viaYellow)
       }
       .widgetURL(URL(string: "viatracker://journey/\(context.attributes.journeyID)"))
       .keylineTint(viaYellow)
-    }
-  }
-  @ViewBuilder private func compactTime(_ state: TrackerCore.ActivityState) -> some View {
-    if state.phase == .completed {
-      Image(systemName: "checkmark")
-    } else if state.waitingForUpdate || state.targetDate <= Date() {
-      Text(state.elapsedTitle).font(.caption)
-    } else {
-      Text(timerInterval: Date()...state.targetDate, countsDown: true).monospacedDigit().font(
-        .caption
-      ).frame(maxWidth: 70)
     }
   }
 }
@@ -64,37 +52,50 @@ struct JourneyProvider: TimelineProvider {
   ) {
     let cache = SharedSnapshot.read()
     Task {
-      var journey = cache?.journey
+      var snapshots: [TrainSnapshot] = []
       if let cache, cache.journey != nil, let url = URL(string: "/v1/trains", relativeTo: URL(string: cache.apiBaseURL)),
         let (data, response) = try? await URLSession.shared.data(
-          for: URLRequest(url: url, timeoutInterval: 12)),
+          for: URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 12)),
         (response as? HTTPURLResponse)?.statusCode == 200,
-        let envelope = try? JSONDecoder().decode(TrainEnvelope.self, from: data),
-        envelope.schemaVersion == 1, let old = journey
-      {
-        journey = Projection.reconcile(old, snapshots: envelope.trains)
+        let envelope = try? JSONDecoder().decode(TrainEnvelope.self, from: data), envelope.schemaVersion == 1 {
+        snapshots = envelope.trains
       }
       let now = Date()
-      // An environment switch can happen while the old timeline's request is still running.
+      // Never let a request restore a deleted journey, old edits, or the previous environment.
       let latest = SharedSnapshot.read()
-      if latest?.apiBaseURL != cache?.apiBaseURL {
-        completion(Timeline(entries: [JourneyEntry(date: now, journey: latest?.journey,
-          testMode: latest?.testMode == true)], policy: .after(now.addingTimeInterval(60))))
-        return
+      var journey = latest?.journey
+      if let saved = SharedSnapshot.read(widgetCache: true), saved.apiBaseURL == latest?.apiBaseURL,
+        let cachedJourney = saved.journey, let selected = journey, selected.id == cachedJourney.id {
+        journey = Projection.reconcile(selected, snapshots: cachedJourney.legs.map(\.snapshot))
+      }
+      if latest?.apiBaseURL == cache?.apiBaseURL, let current = journey {
+        journey = Projection.reconcile(current, snapshots: snapshots)
+        if var refreshed = latest, !snapshots.isEmpty {
+          refreshed.journey = journey
+          try? refreshed.write(widgetCache: true)
+        }
       }
       var dates = [now]
-      if let journey, let state = Projection.state(journey) {
-        let boundaries = journey.legs.flatMap { leg in
-          [leg.boarding?.departure?.effectiveDate, leg.alighting?.arrival?.effectiveDate].compactMap { $0 }
+      if let journey {
+        dates += Projection.timelineDates(journey)
+        if let state = Projection.state(journey) {
+          dates.append(Date(timeIntervalSince1970: state.validUntilEpoch))
         }
-        dates += ([journey.plannedLeaveAt, Date(timeIntervalSince1970: state.scheduledEpoch - 900),
-          state.targetDate, Date(timeIntervalSince1970: state.validUntilEpoch)] + boundaries)
-          .filter { $0 > now && $0 < now.addingTimeInterval(86400) }
+        if let arrival = journey.legs.last?.alighting?.arrival?.effectiveDate {
+          dates.append(arrival.addingTimeInterval(86400))
+        }
       }
-      completion(
-        Timeline(
-          entries: Array(Set(dates)).sorted().map { JourneyEntry(date: $0, journey: journey, testMode: cache?.testMode == true) },
-          policy: .after(now.addingTimeInterval(900))))
+      if let until = latest?.visibleUntil { dates.append(until) }
+      dates = dates.filter { $0 >= now && $0 <= now.addingTimeInterval(7 * 86400) }
+      let refresh = latest?.testMode == true ? 300.0 : 900.0
+      completion(Timeline(entries: Array(Set(dates)).sorted().map { date in
+        var visible = journey
+        if let j = visible, Projection.state(j, now: date)?.phase == .completed {
+          let until = latest?.visibleUntil ?? j.legs.last?.alighting?.arrival?.effectiveDate?.addingTimeInterval(86400)
+          if let until, date >= until { visible = nil }
+        }
+        return JourneyEntry(date: date, journey: visible, testMode: latest?.testMode == true)
+      }, policy: .after(now.addingTimeInterval(refresh))))
     }
   }
 }
@@ -104,8 +105,16 @@ struct CurrentJourneyWidget: Widget {
       JourneyWidgetView(entry: entry).containerBackground(for: .widget) {
         Color(uiColor: .secondarySystemBackground)
       }
-    }.configurationDisplayName("当前行程").description("查看当前车段、倒计时和同站换乘。").supportedFamilies([
+    }.pushHandler(JourneyWidgetPushHandler.self).configurationDisplayName("当前行程").description("查看当前车段、倒计时和同站换乘。").supportedFamilies([
       .systemSmall, .systemMedium,
     ])
+  }
+}
+
+struct JourneyWidgetPushHandler: WidgetPushHandler {
+  func pushTokenDidChange(_ pushInfo: WidgetPushInfo, widgets: [WidgetInfo]) {
+    guard widgets.contains(where: { $0.kind == "CurrentJourney" }),
+      let registration = WidgetRegistration.read() else { return }
+    Task { await registration.register(pushInfo.token) }
   }
 }

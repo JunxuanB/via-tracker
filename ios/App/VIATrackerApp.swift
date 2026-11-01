@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
   }
   nonisolated func userNotificationCenter(
     _ center: UNUserNotificationCenter, willPresent notification: UNNotification
-  ) async -> UNNotificationPresentationOptions { [.banner, .sound] }
+  ) async -> UNNotificationPresentationOptions { [.banner, .sound, .list] }
 }
 @main struct VIATrackerApp: App {
   @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
@@ -38,6 +38,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 }
 
 struct AppBootstrap: View {
+  @AppStorage(InstallationOnboarding.completionKey) private var onboardingCompleted = false
   @State private var store: AppStore?
   @State private var failure: String?
   @State private var loading = false
@@ -46,14 +47,18 @@ struct AppBootstrap: View {
   var body: some View {
     Group {
       if let store {
-        RootView(store: store, pendingURL: $pendingURL).id(store.configuration.namespace)
-          .onAppear { StartupTrace.mark("root.appear") }
+        if onboardingCompleted || InstallationOnboarding.bypassForPreview {
+          RootView(store: store, pendingURL: $pendingURL).id(store.configuration.namespace)
+            .onAppear { StartupTrace.mark("root.appear") }
+        } else {
+          OnboardingView(store: store) { onboardingCompleted = true }
+        }
       } else {
         VStack(spacing: 18) {
           Image(systemName: "tram.fill").font(.system(size: 42)).foregroundStyle(VIATheme.accent)
             .frame(width: 90, height: 90).background(
               VIATheme.tintSurface, in: RoundedRectangle(cornerRadius: 24))
-          Text("VIA Tracker").font(.system(size: 27, weight: .semibold))
+          Text("Train Tracker").font(.system(size: 27, weight: .semibold))
           if let failure {
             Text("无法打开本地行程").font(.headline)
             Text(failure).font(.system(size: 13)).multilineTextAlignment(.center).foregroundStyle(

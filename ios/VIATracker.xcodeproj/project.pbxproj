@@ -13,6 +13,7 @@
 		4497399BE6162880A7C650FB /* JourneyDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567946FEF130A2ADFDBD9EFA /* JourneyDetail.swift */; };
 		4F590A56B51AA32242DBAFD7 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17BEFF6CFD0D83694E62A07 /* AppStore.swift */; };
 		5CBC363F3F1475B238096770 /* PreviewScenarios.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB12AA44B4B6C08577819E74 /* PreviewScenarios.swift */; };
+		5DAA8772477C281BA2FBB600 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11A13EB075895FAAEB2F2421 /* OnboardingView.swift */; };
 		651C2A817752FE62D7893E04 /* JourneyFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524A140B77DC351420F521C4 /* JourneyFlowTests.swift */; };
 		6DF91F34EDF9FEFA93F7E2AA /* ActivityViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DCEE8E2113812211EA33E17 /* ActivityViews.swift */; };
 		8D0FFE1A84FE8FE393C9EFEE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DA7AFD9E1C85158677A2ABC0 /* PrivacyInfo.xcprivacy */; };
@@ -62,6 +63,7 @@
 
 /* Begin PBXFileReference section */
 		09C42A354E1DCC9C87FFFA07 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		11A13EB075895FAAEB2F2421 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		139A7ED28ECBDE01259229F7 /* VIATracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = VIATracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		163C8CAC03479FBF3E01C172 /* VIATrackerWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VIATrackerWidgets.swift; sourceTree = "<group>"; };
 		21DD9D6CFC1605C2F1B366F6 /* VIATrackerWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = VIATrackerWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -120,6 +122,7 @@
 				93B03FE8423B6B202113746E /* Assets.xcassets */,
 				557C762D7B35466A3C3E6A52 /* DesignSystem.swift */,
 				567946FEF130A2ADFDBD9EFA /* JourneyDetail.swift */,
+				11A13EB075895FAAEB2F2421 /* OnboardingView.swift */,
 				DB12AA44B4B6C08577819E74 /* PreviewScenarios.swift */,
 				DA7AFD9E1C85158677A2ABC0 /* PrivacyInfo.xcprivacy */,
 				3775F3FCB62C40B80F1E926E /* RootView.swift */,
@@ -310,6 +313,7 @@
 				4F590A56B51AA32242DBAFD7 /* AppStore.swift in Sources */,
 				EB8A7DA1D980943F91814A2D /* DesignSystem.swift in Sources */,
 				4497399BE6162880A7C650FB /* JourneyDetail.swift in Sources */,
+				5DAA8772477C281BA2FBB600 /* OnboardingView.swift in Sources */,
 				5CBC363F3F1475B238096770 /* PreviewScenarios.swift in Sources */,
 				B33E024FD61E5F3428EA2492 /* RootView.swift in Sources */,
 				8E919B29E613CA9977643416 /* SettingsView.swift in Sources */,
@@ -454,6 +458,7 @@
 		7841E529E3C5E3E7569955BC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APNS_ENVIRONMENT = production;
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_ENTITLEMENTS = Configuration/Widgets.entitlements;
@@ -473,6 +478,7 @@
 		8690029086C7FC0296F5AA5A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APNS_ENVIRONMENT = development;
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_ENTITLEMENTS = Configuration/Widgets.entitlements;

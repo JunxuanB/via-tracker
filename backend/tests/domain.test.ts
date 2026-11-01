@@ -63,11 +63,12 @@ test("only station event estimates used and absent estimate falls back", () => {
     Date.parse(j.legs[0].snapshot.calls[2].arrival!.scheduled) / 1000,
   );
 });
-test("delay recovery, cumulative threshold and heartbeat", () => {
+test("ETA changes, delay recovery and heartbeat", () => {
   const a = project(cases[3].journey, cases[3].now);
+  assert.equal(shouldPush(a, a, 100, 120), false);
   assert.equal(
     shouldPush(a, { ...a, targetEpoch: a.targetEpoch + 30 }, 100, 120),
-    false,
+    true,
   );
   assert.equal(
     shouldPush(a, { ...a, targetEpoch: a.targetEpoch + 60 }, 100, 120),
@@ -178,4 +179,21 @@ test("official motion survives subscription validation with no invented actual t
   const saved = validateJourney(journey);
   assert.deepEqual(saved.legs[0].snapshot.position, journey.legs[0].snapshot.position);
   assert.ok(saved.legs[0].snapshot.calls.every(call => !("actualArrival" in call)));
+});
+
+test("passenger confirmations use revised departure and expire at departure", () => {
+  for (const phase of ["onTheWay", "waiting"] as const) {
+    const j = structuredClone(cases[0].journey);
+    j.manualPhase = phase;
+    const leg = j.legs[0];
+    const boarding = leg.snapshot.calls.find(c => c.index === leg.boardingIndex)!;
+    const departure = Date.parse(boarding.departure!.scheduled) / 1000 + 1200;
+    boarding.departure!.estimated = new Date(departure * 1000).toISOString();
+    assert.equal(project(j, departure - 1).phase, phase);
+    assert.equal(project(j, departure - 1).targetEpoch, departure);
+    assert.equal(project(j, departure - 1).targetIsEstimate, true);
+    assert.equal(project(j, departure).phase, "riding");
+    delete boarding.departure!.estimated;
+    assert.equal(project(j, departure - 1201).targetIsEstimate, false);
+  }
 });

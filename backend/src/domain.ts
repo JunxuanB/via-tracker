@@ -79,6 +79,7 @@ export interface ActivityState {
   nextTrainNumber?: string;
   nextDepartureEpoch?: number;
   connectionMinutes?: number;
+  progressStartEpoch?: number;
 }
 export const epoch = (s?: string) =>
   s && Number.isFinite(Date.parse(s)) ? Date.parse(s) / 1000 : undefined;
@@ -121,9 +122,11 @@ export function project(journey: Journey, now: number): ActivityState {
   const arr = epoch(a?.arrival?.scheduled) ?? dep;
   const estArr = epoch(a?.arrival?.estimated) ?? arr;
   const leave = j.legs[0].planningDeparture - j.travelToStationMinutes * 60;
+  const manualPhase = (j.manualPhase === "onTheWay" || j.manualPhase === "waiting") && now >= estDep
+    ? undefined : j.manualPhase;
   let phase: Phase = j.completed
     ? "completed"
-    : (j.manualPhase ??
+    : (manualPhase ??
       (now >= estDep ? "riding" : i > 0
         ? "transferring"
         : now < leave
@@ -136,14 +139,14 @@ export function project(journey: Journey, now: number): ActivityState {
     phase === "beforeDeparture"
       ? leave
       : phase === "onTheWay" || phase === "transferring"
-        ? dep
+        ? estDep
         : phase === "waiting"
           ? estDep
           : estArr;
   const sourceFetchedEpoch = epoch(leg.snapshot.sourceFetchedAt) ?? 0;
   const next = j.legs[i + 1],
     nextDepartureEpoch = next
-      ? epoch(stations(next).boarding?.departure?.scheduled)
+      ? epoch(stations(next).boarding?.departure?.estimated) ?? epoch(stations(next).boarding?.departure?.scheduled)
       : undefined;
   return {
     phase,
@@ -154,6 +157,7 @@ export function project(journey: Journey, now: number): ActivityState {
     scheduledEpoch: phase === "beforeDeparture" ? leave : phase === "riding" || phase === "completed" ? arr : dep,
     sourceFetchedEpoch,
     validUntilEpoch: sourceFetchedEpoch + 600,
+    progressStartEpoch: estDep,
     progress: Math.min(
       1,
       Math.max(0, (now - estDep) / Math.max(1, estArr - estDep)),
@@ -165,7 +169,7 @@ export function project(journey: Journey, now: number): ActivityState {
     targetIsEstimate:
       phase === "riding"
         ? epoch(a?.arrival?.estimated) !== undefined
-        : phase === "waiting" && epoch(b?.departure?.estimated) !== undefined,
+        : ["onTheWay", "waiting", "transferring"].includes(phase) && epoch(b?.departure?.estimated) !== undefined,
     ...(next ? { nextTrainNumber: next.trainNumber } : {}),
     ...(nextDepartureEpoch !== undefined
       ? {
@@ -186,7 +190,8 @@ export function shouldPush(
     previous.phase !== next.phase ||
     previous.currentLegIndex !== next.currentLegIndex ||
     previous.waitingForUpdate !== next.waitingForUpdate ||
-    Math.abs(previous.targetEpoch - next.targetEpoch) >= 60 ||
+    previous.targetEpoch !== next.targetEpoch ||
+    previous.progressStartEpoch !== next.progressStartEpoch ||
     previous.nextDepartureEpoch !== next.nextDepartureEpoch ||
     previous.reference !== next.reference ||
     now - lastSentAt >= 300

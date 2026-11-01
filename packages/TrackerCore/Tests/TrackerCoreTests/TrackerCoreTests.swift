@@ -148,3 +148,21 @@ func cases() throws -> [ProjectionCase] {
   let reference = try ReferenceSchedule.migrate(journey.legs[0].snapshot, to: "2026-11-07")
   #expect(reference.calls.allSatisfy { $0.reached == nil })
 }
+
+@Test func passengerConfirmationsFollowLatestDepartureAndResumeAutomatically() throws {
+  var j = try cases()[0].journey
+  let now = j.plannedLeaveAt.addingTimeInterval(-60)
+  #expect(Projection.confirmingPassengerProgress(j, to: .waiting, now: now) == nil)
+  j = try #require(Projection.confirmingPassengerProgress(j, to: .onTheWay, now: now))
+  #expect(Projection.confirmingPassengerProgress(j, to: .beforeDeparture, now: now) == nil)
+  let boardingIndex = try #require(j.legs[0].snapshot.calls.firstIndex { $0.index == j.legs[0].boardingIndex })
+  let departure = try #require(j.legs[0].boarding?.departure?.scheduledDate).addingTimeInterval(1200)
+  j.legs[0].snapshot.calls[boardingIndex].departure?.estimated = Time.iso(departure)
+  #expect(Projection.state(j, now: now)?.targetDate == departure)
+  j = try #require(Projection.confirmingPassengerProgress(j, to: .waiting, now: now))
+  #expect(Projection.state(j, now: departure.addingTimeInterval(-1))?.phase == .waiting)
+  #expect(Projection.state(j, now: departure)?.phase == .riding)
+  #expect(Projection.confirmingPassengerProgress(j, to: .waiting, now: departure) == nil)
+  j.trackingEnded = true
+  #expect(Projection.confirmingPassengerProgress(j, to: .waiting, now: now) == nil)
+}
