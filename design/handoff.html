@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>VIA Tracker · Developer handoff</title><style>
+:root{color-scheme:light;--paper:#fffefa;--ink:#252622;--muted:#66675f;--line:#e7e4d8;--yellow:#ffcc00}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:28px}
+body{margin:0;background:#f5f4ed;color:var(--ink);font:15px/1.9 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif}
+a{color:#705600;text-decoration-thickness:1px;text-underline-offset:3px}a:hover{color:#252622}
+a:focus-visible{outline:3px solid #a68200;outline-offset:4px;border-radius:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 32px;background:var(--paper);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:650;font-size:17px}.mark{display:grid;place-items:center;background:var(--yellow);width:36px;height:36px;border-radius:11px;font-size:13px;font-weight:800}
+.top-links{display:flex;gap:24px;font-size:13px}.layout{max-width:1500px;margin:auto;display:grid;grid-template-columns:258px minmax(0,1fr)}
+aside{padding:32px 20px 40px 26px;position:sticky;top:0;height:100vh;overflow:auto}.nav-label{font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:16px}
+aside a{display:block;text-decoration:none;color:#57584f;font-size:12px;line-height:1.65;padding:7px 9px;border-radius:6px}aside a:hover{background:#ffeaa0}
+main{min-width:0;margin:32px 30px 48px 0;padding:44px 52px;background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 40px #34301b05}
+article{max-width:980px;margin:auto}h1{font-size:31px;line-height:1.4;letter-spacing:-.8px;margin:0 0 18px}h2{font-size:22px;line-height:1.5;margin:48px 0 18px;padding-top:26px;border-top:1px solid var(--line);letter-spacing:-.4px}h2:first-of-type{border-top:4px solid var(--yellow);padding-top:24px;margin-top:32px}h3{font-size:17px;margin:28px 0 12px}p{margin:14px 0}p:first-of-type{font-size:12px;color:var(--muted)}
+strong{font-weight:650}ul,ol{padding-left:25px}li{padding-left:3px;margin:9px 0}blockquote{border-left:3px solid var(--yellow);margin:14px 0;padding:1px 18px;background:#fff9dd;border-radius:0 7px 7px 0}blockquote p{font-size:14px!important;color:var(--ink)!important}
+code{font:12px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;background:#f1f0e8;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}pre{background:#f1f0e8;border:1px solid #e7e4d8;border-radius:10px;padding:18px 20px;white-space:pre-wrap;overflow-wrap:anywhere}pre code{padding:0;background:none}
+table{border-collapse:collapse;width:100%;margin:20px 0;font-size:13px;line-height:1.8;table-layout:fixed}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:12px 13px;overflow-wrap:anywhere}th{background:#f5f2e5;font-weight:650}th:first-child,td:first-child{width:27%}tr:last-child td{border-bottom:2px solid var(--line)}
+footer{margin:46px 0 0;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:18px}
+@media(max-width:1100px){.layout{grid-template-columns:220px minmax(0,1fr)}main{padding:32px 30px;margin-right:20px}aside{padding-left:16px}}
+@media(max-width:760px){.top{padding:14px 18px}.top-links{gap:16px;font-size:12px}.brand{font-size:15px}.layout{display:block}aside{position:static;height:auto;padding:20px 18px;border-bottom:1px solid var(--line)}.nav-label{margin-bottom:8px}aside nav{display:flex;overflow:auto;gap:6px}aside a{white-space:nowrap;padding:9px;background:#eeece1}main{margin:16px 10px 28px;padding:25px 20px;border-radius:12px}h1{font-size:25px}h2{font-size:20px;margin-top:36px}body{font-size:14px}table{font-size:12px}th,td{padding:10px 7px}th:first-child,td:first-child{width:30%}code{font-size:11px}pre{padding:14px 12px}footer{display:block}footer a{display:block;margin-top:10px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{body{background:white;font-size:10pt}.top,aside,.top-links,footer{display:none}.layout{display:block}main{border:0;box-shadow:none;padding:0;margin:0}article{max-width:none}h2{break-after:avoid}pre,blockquote,tr{break-inside:avoid}a{color:inherit}h1{font-size:24pt}}
+</style></head>
+<body><header class="top"><div class="brand"><span class="mark" aria-hidden="true">VIA</span>VIA Tracker</div><nav class="top-links" aria-label="Documentation links"><a href="index.html#journey">UI designs ↗</a><a href="DEVELOPMENT_HANDOFF.md" download>Markdown source</a></nav></header>
+<div class="layout"><aside aria-label="Contents"><div class="nav-label">DEVELOPER HANDOFF · CONTENTS</div><nav><a href="#section-01">01. Components and preview sources</a><a href="#section-02">02. Product decisions</a><a href="#section-03">03. Navigation and scope</a><a href="#section-04">04. Time semantics</a><a href="#section-05">05. Progress and passenger confirmations</a><a href="#section-06">06. Same-station connections</a><a href="#section-07">07. Future reference timetables</a><a href="#section-08">08. Source observation and uncertainty</a><a href="#section-09">09. Domain identity and quality</a><a href="#section-10">10. Offline behavior and recovery</a><a href="#section-11">11. Architecture</a><a href="#section-12">12. Refresh and delivery</a><a href="#section-13">13. Activity and widget lifecycle</a><a href="#section-14">14. API and security</a><a href="#section-15">15. Design groups and accessibility</a><a href="#section-16">16. Fictional demonstration timeline</a><a href="#section-17">17. Verification priorities</a><a href="#section-18">18. Open questions and references</a></nav></aside><main><article><h1>Train Tracker developer handoff</h1>
+<p>Updated 12 November 2026. This document describes the current architecture and product rules. Historical HTML designs are previews, not proof of native implementation or system delivery. See <a href="../docs/RUNBOOK.md">operations</a> and <a href="../docs/RELEASE_VALIDATION.md">validation</a> for build instructions and evidence.</p>
+<p><a href="index.html#journey">Local design preview</a> · <a href="handoff.html">HTML handoff</a> · <a href="reference/api-observation.json">historical source observation</a></p>
+<h2 id="section-01">01. Components and preview sources</h2>
+<p>The project includes an iOS / iPadOS 26+ app, shared Swift package, widgets, Live Activities and a Workers/D1 backend. The design source has 56 artboards in 19 groups, including phone/tablet, dark mode, accessibility and system-content previews.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>source/screens.js</code></td>
+<td>Artboards, scenario groups and navigation</td>
+</tr>
+<tr>
+<td><code>source/station-selection.js</code></td>
+<td>Prototype station selection and travel-time steps</td>
+</tr>
+<tr>
+<td><code>source/style.css</code>, <code>source/shell.html</code></td>
+<td>Preview appearance and shell</td>
+</tr>
+<tr>
+<td><code>source/build.py</code></td>
+<td>Self-contained preview generator</td>
+</tr>
+<tr>
+<td><code>source/build-handoff.py</code></td>
+<td>Markdown-to-HTML handoff renderer</td>
+</tr>
+<tr>
+<td><code>source/export-symbols.swift</code></td>
+<td>Local-only system-symbol export</td>
+</tr>
+<tr>
+<td><code>source/verify.cjs</code>, <code>source/verify-selection.cjs</code></td>
+<td>Preview layout and interaction checks</td>
+</tr>
+<tr>
+<td><code>../contracts/openapi.json</code></td>
+<td>Implemented API contract</td>
+</tr>
+</tbody>
+</table>
+<p>Generated <code>index.html</code> and exported symbols are ignored. Build them locally; do not redistribute exported Apple artwork. Station selection in the HTML is a session-only demonstration and does not create a persisted native journey.</p>
+<h2 id="section-02">02. Product decisions</h2>
+<p>Use yellow accents, clear functional text and native navigation. Keep station names as published; app text supports English and Simplified Chinese. Passengers select boarding/alighting stations from lists, set planning departure and travel time, and optionally add same-station connections.</p>
+<p>Travel time defaults to 30 minutes, changes in 15-minute steps and can be zero. Planned leave time is the passenger's plan, never a recommendation silently shifted by train delays. Connections require identical station codes and have no transfer-duration input or risk rating.</p>
+<p>A journey contains ordered train legs. Current-trip presentation selects the earliest unfinished journey by planned departure. A single activity window follows its current leg. Trips can exceed the activity's lifecycle limit. Maps are supplementary; no personal-location permission is needed.</p>
+<h2 id="section-03">03. Navigation and scope</h2>
+<p>Phone navigation is single-column with lists and sheets. Tablet uses sidebar/detail columns and collapses in narrow windows. Trip detail includes countdowns, station times, connection intervals, maps/diagrams, freshness, editing and activity controls.</p>
+<p>No ticket sales, rebooking, guaranteed connections, cross-station transfers, account system, automatic cross-device sync or personal tracking is provided. Devices manage their own journeys.</p>
+<h2 id="section-04">04. Time semantics</h2>
+<p>Keep three separate values: official <code>scheduled</code>, official <code>estimated</code>, and user <code>planningDeparture</code>. <code>plannedLeaveAt</code> is planning departure minus <code>travelToStationMinutes</code>. Delays do not overwrite that plan.</p>
+<p>Use the selected boarding station's departure and selected alighting station's arrival, never the whole train's origin/destination times. Departure/arrival countdowns use estimates with scheduled fallback. Connection intervals use the relevant arrival/departure events. Calculate durations with absolute instants and display times in each station's IANA time zone.</p>
+<p>Missing estimates are labelled as scheduled fallback. Never substitute the current time for a missing event or call an estimate an actual event. Time-based progress is not GPS distance.</p>
+<h2 id="section-05">05. Progress and passenger confirmations</h2>
+<p>Progress is derived from current snapshots and time: before departure, travel to station, waiting, riding, connection and completion. New estimates can reverse automatic completion, so derived progress must not permanently overwrite saved state.</p>
+<p>Adjacent passenger confirmations can move from beforeDeparture to onTheWay to waiting; waiting means arrival at the boarding station. Those overrides expire at estimated departure, with scheduled fallback. Arbitrary phase overrides are test-only. Routine destination arrival needs no confirmation. Swift and TypeScript apply matching rules.</p>
+<h2 id="section-06">06. Same-station connections</h2>
+<p>Match station codes, train identity, service date and station order. Adding a leg fixes the previous alighting station as the next boarding station and filters infeasible scheduled connections. If none exist, allow changing the date or previous station.</p>
+<p>An existing zero/negative interval remains visible with the actual times and an edit option. Do not hide the leg, invent a safety rating or rebook automatically.</p>
+<h2 id="section-07">07. Future reference timetables</h2>
+<p>When no usable target-date run exists, choose a complete same-weekday run first, then the nearest suitable run. A reference is not a guarantee that the service operates on that date.</p>
+<p>Migrate station-local wall times using IANA calendars and relative service-day offsets, not fixed 24-hour increments. Handle DST ambiguity explicitly and reject nonexistent local times. Clear estimates, reached flags, positions and whole-train running flags.</p>
+<p>Match the formal train by number and origin service date, then verify selected stations/order. Boarding date can differ from origin date. Ask once about a first planning-time difference; keep/sync choice applies only to that journey.</p>
+<h2 id="section-08">08. Source observation and uncertainty</h2>
+<p>The observed endpoint is <a href="https://tsimobile.viarail.ca/data/allData.json">https://tsimobile.viarail.ca/data/allData.json</a>. The historical 31 October 2026 observation contained 68 trains and 869 station calls across multiple service dates; counts are not a contract. No versioned upstream schema or SLA was established.</p>
+<p>Preserve raw keys; display keys may include month/day or only a number. <code>instance</code> is treated as origin service date. <code>times</code> may be partial and its first station need not be the true origin. Nested arrival/departure events can omit estimates; origins/termini can have only one event.</p>
+<p>Optional <code>lat</code>/<code>lng</code>/<code>poll</code> describe location and its age. Fetch time must not replace position report time. <code>eta == &quot;ARR&quot;</code> is an observed reached marker, not an actual timestamp. Whole-train <code>departed</code> does not establish departure from an intermediate boarding station. Do not parse display strings into authoritative times.</p>
+<p>Advisories contain English/French fields. Render remote text safely and validate links. Missing trains do not imply cancellation. Data access does not by itself establish redistribution rights. Test fixtures are fictional; source observations must not become a production timetable.</p>
+<h2 id="section-09">09. Domain identity and quality</h2>
+<p>Train identity includes number and full origin service date. Station references include instance, code and order. Keep original time strings, parsed instants, event type and zone. Decode <code>Z</code>, offsets and fractional seconds.</p>
+<p>Separate source fetch time, content-change time, position report time, device receipt time and validity threshold. A bad individual record should not make every train unusable. Preserve quality flags for retained or inferred station events.</p>
+<p><code>Journey</code>, <code>TrainLeg</code>, <code>TrainSnapshot</code>, <code>StationCall</code>, shared snapshots, activity sessions and installation-scoped subscriptions are implemented in the shared core and backend. Consult code and OpenAPI for exact field names rather than historical design drafts.</p>
+<h2 id="section-10">10. Offline behavior and recovery</h2>
+<p>Load persisted trips/feed before requesting fresh data. Distinguish device offline, upstream failure and stale position. Keep valid cached data and system timers; do not invent new estimates. Reconnection updates existing journeys without losing edits.</p>
+<p>Foreground startup, manual refresh and connectivity recovery request the normalized API. Retry with capped backoff/jitter and cancel dense polling in background. Revisions prevent obsolete responses from winning. Background scheduling cannot guarantee every intermediate event is observed.</p>
+<h2 id="section-11">11. Architecture</h2>
+<p>SwiftUI provides the interface, SwiftData local persistence, ActivityKit live content, WidgetKit extensions, App Group summaries, URLSession networking and MapKit valid train locations.</p>
+<p>A central scheduled Worker fetches the upstream feed once per minute, normalizes/validates it, stores date documents in D1 and distributes relevant changes through authenticated APIs and APNs. Avoid fetching the whole upstream feed separately for each passenger. D1 leases and guarded writes coordinate overlapping work.</p>
+<p>A local HTTP/2 proxy exists for APNs debugging. A successful provider response is transport evidence; real token authorization and visible delivery require device checks.</p>
+<h2 id="section-12">12. Refresh and delivery</h2>
+<p>Compare visible phase/current leg and estimates against the last sent state. Send phase changes promptly and ETA changes after at least 60 seconds of accumulated difference. Handle delay increases and recoveries alike. Five-minute healthy renewals preserve activity freshness without rewriting old position timestamps.</p>
+<p>Countdowns use system timestamps, without per-second pushes. APNs timestamps are monotonic; retries and collapse identifiers reduce duplicate/outdated work but do not guarantee exactly-once delivery. Source absence is not arrival/cancellation evidence.</p>
+<h2 id="section-13">13. Activity and widget lifecycle</h2>
+<p>Tracking begins five hours before planned leave time. Earlier saved trips show dates and planning information. Remote start requires a previously issued push-to-start token and system permission. The server attempts replacement three minutes before the eight-hour activity limit; manual reopening remains the recovery path.</p>
+<p>Activity payloads carry only necessary summaries, not complete station lists. Permission, dismissal, token rotation, expiry and trip completion are distinct states. Activity callbacks and asynchronous operations are guarded by session identity/generation. Deep links open the correct trip.</p>
+<p>Widgets use shared summaries, their own network cache, timeline boundaries and push registration. Actual refresh remains subject to system budgets. Neither content galleries nor compiled extensions prove system-hosted behavior.</p>
+<h2 id="section-14">14. API and security</h2>
+<p>The implemented routes and schemas are in <code>../contracts/openapi.json</code>, including <code>/v1/trains</code>, subscriptions and activity-start token registration. API envelopes retain schema/snapshot versions, source time/status and quality information. ETags reduce unchanged transfers.</p>
+<p>Installations authenticate with random Keychain credentials; only hashes are stored server-side. Validate IDs, station order, dates, sizes and counts. Keep APNs keys/operator credentials server-side and omit full tokens from logs. Subscription expiry and installation retention are described in the <a href="../docs/PRIVACY.md">privacy policy</a>.</p>
+<p>The test console requires HTTPS Basic authentication, has independent storage and cannot expose installation credentials. Debug environment selection is absent from Release builds.</p>
+<h2 id="section-15">15. Design groups and accessibility</h2>
+<p>Groups cover trip detail/home, train/station selection, planning, connections, phases, reference matching, offline quality, activity lifecycle, edge cases, settings, accessibility, tablet layouts, Lock Screen, activity states, Island, widgets and foundations. <a href="../docs/UI_MATRIX.md">The matrix</a> retains all 56 IDs.</p>
+<p>Design colors include yellow <code>#FFCC00</code>, ink <code>#252622</code>, pale yellow <code>#FFF1B8</code>, accent <code>#705600</code>, dark background <code>#191917</code> and dark card <code>#262622</code>. Use dark text on yellow, system typography/symbols and monospaced timers. Controls need generous hit areas; Dynamic Type should wrap or rearrange content rather than simply shrink it.</p>
+<p>VoiceOver should expose phase, destination, duration, source/freshness, legs/connections and actions without announcing every second. Device testing is required.</p>
+<h2 id="section-16">16. Fictional demonstration timeline</h2>
+<p>The primary design snapshot is 6 November 2026 at 17:24 America/Toronto. VIA 44 departs Toronto at 14:00, reaches Ottawa at scheduled 18:30 / estimated 18:42, then VIA 38 leaves at 19:15 and reaches Montréal at 21:12. This yields a 78-minute arrival countdown and a 33-minute connection.</p>
+<p>A separate before-leaving snapshot is 12:55 with planned departure 14:00 and 30-minute travel, giving planned leave 13:30 and a 35-minute countdown. Other snapshots deliberately show different phases/delays. Overnight and cross-zone examples exercise layout only. None is a verified operating timetable.</p>
+<h2 id="section-17">17. Verification priorities</h2>
+<p>Cover multi-date identity, year boundaries, intermediate boarding, missing events, same-station constraints, zero/negative intervals, DST, offline recovery, retained snapshots, newer edits, permission denial, token rotation, concurrent/old pushes and long-running lifecycle.</p>
+<p>Use domain/contract tests for rules, local simulations for dependency failure, native UI tests for interaction, preview checks for design layout and devices for system delivery/rendering. Do not substitute one form of evidence for another.</p>
+<h2 id="section-18">18. Open questions and references</h2>
+<p>Remaining device questions include terminated-app remote start, long-running replacement, actual notification delivery, system widget budgets, VoiceOver and real tablet resizing. Upstream cancellation semantics, route completeness and undocumented field guarantees remain uncertain.</p>
+<ul>
+<li><a href="https://developer.apple.com/documentation/activitykit">ActivityKit</a></li>
+<li><a href="https://developer.apple.com/documentation/widgetkit">WidgetKit</a></li>
+<li><a href="https://developer.apple.com/documentation/mapkit">MapKit</a></li>
+<li><a href="https://developers.cloudflare.com/workers/configuration/cron-triggers/">Cloudflare Cron Triggers</a></li>
+</ul>
+<p>Use the code and current official documentation when changing APIs; this handoff is not a platform guarantee.</p>
+<footer><span>Product rules and source observations · Independent and unofficial</span><a href="index.html#journey">View all UI designs ↗</a></footer></article></main></div></body></html>

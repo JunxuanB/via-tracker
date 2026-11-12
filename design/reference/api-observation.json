@@ -1,0 +1,161 @@
+{
+  "description": "Statistics and field excerpts from an observed snapshot; not a complete response, formal contract or UI demo timetable.",
+  "sourceURL": "https://tsimobile.viarail.ca/data/allData.json",
+  "observedAt": "2026-10-31T01:18:59Z",
+  "observedAtToronto": "2026-10-30T21:18:59-04:00",
+  "rootType": "object",
+  "rawResponseSHA256": "049976177d8e12d551be77192c063d0593cf9b4c9920993d13bbb427222b1f10",
+  "recordCount": 68,
+  "stationCallCount": 869,
+  "instances": {
+    "2026-10-26": 1,
+    "2026-10-28": 1,
+    "2026-10-30": 65,
+    "2026-10-29": 1
+  },
+  "trainFieldOccurrences": {
+    "alerts": 53,
+    "departed": 68,
+    "arrived": 68,
+    "from": 68,
+    "to": 68,
+    "instance": 68,
+    "times": 68,
+    "lat": 20,
+    "lng": 20,
+    "speed": 20,
+    "direction": 20,
+    "poll": 20,
+    "pollMin": 20
+  },
+  "stationFieldOccurrences": {
+    "station": 869,
+    "code": 869,
+    "tz": 869,
+    "estimated": 869,
+    "scheduled": 869,
+    "eta": 869,
+    "departure": 807,
+    "diff": 861,
+    "diffMin": 861,
+    "arrival": 804
+  },
+  "nestedEventFieldOccurrences": {
+    "estimated": 1595,
+    "scheduled": 1611
+  },
+  "timezones": [
+    "America/Edmonton",
+    "America/Halifax",
+    "America/New_York",
+    "America/Regina",
+    "America/Toronto",
+    "America/Vancouver",
+    "America/Winnipeg",
+    "UTC"
+  ],
+  "sampleDisplayKeys": [
+    "2 (10-26)",
+    "1 (10-28)",
+    "2 (10-30)",
+    "692",
+    "665",
+    "601",
+    "603",
+    "97",
+    "22",
+    "186"
+  ],
+  "rawRecordExcerpt": {
+    "1 (10-28)": {
+      "lat": 53.5514,
+      "lng": -113.1463,
+      "speed": 0,
+      "direction": 318.22,
+      "poll": "2026-10-31T01:17:49Z",
+      "departed": true,
+      "arrived": false,
+      "from": "TORONTO",
+      "to": "VANCOUVER",
+      "instance": "2026-10-28",
+      "pollMin": 0,
+      "times": [
+        {
+          "station": "Laforest",
+          "code": "LAFO",
+          "tz": "America/Toronto",
+          "estimated": "2026-10-28T19:43:52-04:00",
+          "scheduled": "2026-10-28T18:48:00-04:00",
+          "eta": "ARR",
+          "arrival": {
+            "estimated": "2026-10-28T19:43:52-04:00",
+            "scheduled": "2026-10-28T18:48:00-04:00"
+          },
+          "departure": {
+            "estimated": "2026-10-28T19:43:52-04:00",
+            "scheduled": "2026-10-28T18:48:02-04:00"
+          },
+          "diff": "bad",
+          "diffMin": 55
+        }
+      ]
+    }
+  },
+  "rawMissingEstimateExcerpt": {
+    "rawKey": "1 (10-28)",
+    "station": "Edson",
+    "code": "EDSN",
+    "tz": "America/Edmonton",
+    "arrival": {
+      "scheduled": "2026-10-31T02:52:00-06:00"
+    }
+  },
+  "observedTrain38Stations": [
+    {
+      "station": "Ottawa",
+      "code": "OTTW",
+      "tz": "America/Toronto"
+    },
+    {
+      "station": "Casselman",
+      "code": "CSLM",
+      "tz": "America/Toronto"
+    },
+    {
+      "station": "Alexandria",
+      "code": "ALEX",
+      "tz": "America/Toronto"
+    },
+    {
+      "station": "Dorval",
+      "code": "DORV",
+      "tz": "America/Toronto"
+    },
+    {
+      "station": "Montréal",
+      "code": "MTRL",
+      "tz": "America/Toronto"
+    }
+  ],
+  "alertShape": {
+    "header": {
+      "en": "string",
+      "fr": "string"
+    },
+    "description": {
+      "en": "string",
+      "fr": "string"
+    },
+    "url": {
+      "en": "string, possibly empty",
+      "fr": "string, possibly empty"
+    }
+  },
+  "warnings": [
+    "Field presence is an observation, not an API guarantee.",
+    "The interpretation of instance as origin service date still needs formal verification.",
+    "eta and diff are source display fields, not verified event enums.",
+    "No actualArrival or actualDeparture fields were observed.",
+    "The times array may omit the true origin; future references must not reuse current status or position."
+  ]
+}

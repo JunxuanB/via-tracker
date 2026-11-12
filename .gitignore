@@ -20,3 +20,7 @@ __pycache__/
 # Locally generated previews contain exported SF Symbols; do not redistribute.
 design/assets/symbols/
 design/index.html
+
+# Private distribution material stays outside the source repository.
+docs/app-store/
+docs/verification/appstore-release.json
