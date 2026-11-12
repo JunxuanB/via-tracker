@@ -15,7 +15,9 @@ struct SettingsView: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 17) {
-        if store.isTestMode { testModePanel }
+        #if DEBUG
+          if store.isTestMode { testModePanel }
+        #endif
         Text("设置").font(.system(size: 32, weight: .semibold)).tracking(-1.5)
         Text("管理显示、规划与数据。").font(.system(size: 13)).foregroundStyle(VIATheme.muted)
         VIASectionLabel(title: "实时活动")
@@ -82,21 +84,26 @@ struct SettingsView: View {
         Button("关于 Train Tracker 与开源声明", systemImage: "info.circle") {
           aboutDetails = true
         }.font(.subheadline).frame(minHeight: 44)
-        Button {
-          let now = Date()
-          versionTaps = now.timeIntervalSince(lastVersionTap) < 3 ? versionTaps + 1 : 1
-          lastVersionTap = now
-          if versionTaps >= 7 { versionTaps = 0; environmentDetails = true }
-        } label: {
-          Text("Train Tracker \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0") · 非 VIA Rail 官方产品\n无账号 · 行程保存在本机")
-            .font(.system(size: 10)).lineSpacing(4).foregroundStyle(VIATheme.muted)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-        }.buttonStyle(.plain).padding(.top, 12).accessibilityLabel("版本号，连续点击七次打开环境选择")
+        // The environment switch is a development tool and is not compiled into release builds.
+        #if DEBUG
+          Button {
+            let now = Date()
+            versionTaps = now.timeIntervalSince(lastVersionTap) < 3 ? versionTaps + 1 : 1
+            lastVersionTap = now
+            if versionTaps >= 7 { versionTaps = 0; environmentDetails = true }
+          } label: {
+            versionLabel
+          }.buttonStyle(.plain).padding(.top, 12).accessibilityLabel("版本号，连续点击七次打开环境选择")
+        #else
+          versionLabel.padding(.top, 12)
+        #endif
       }.padding(.horizontal, 24).padding(.top, 45).padding(.bottom, 20).frame(maxWidth: 700).frame(
         maxWidth: .infinity)
     }.viaBackground().toolbar(.hidden, for: .navigationBar)
       .task { await store.checkNotifications() }
+      #if DEBUG
       .sheet(isPresented: $environmentDetails) { environmentSheet }
+      #endif
       .sheet(isPresented: $aboutDetails) {
         NavigationStack {
           ScrollView { ProductDeclaration().padding(24).frame(maxWidth: 620).frame(maxWidth: .infinity) }
@@ -116,6 +123,7 @@ struct SettingsView: View {
           ScrollView {
             VStack(alignment: .leading, spacing: 20) {
               Notice(text: "出门、发车前 15 分钟、发车、换乘到站和最终到达会单独提醒。划掉实时活动不会关闭行程通知；结束追踪会停止提醒。")
+              Notice(text: "提前保存的行程会在出门前 5 小时开始倒计时，并自动开启实时活动。", symbol: "clock")
               LabeledContent("实时活动", value: store.activities.status)
               LabeledContent("普通通知", value: store.notificationStatus)
               Button(store.notificationStatus == "尚未请求" ? "允许行程通知" : "管理通知权限") { notificationAction() }.buttonStyle(
@@ -152,6 +160,12 @@ struct SettingsView: View {
         }.presentationDetents([.medium, .large])
       }
   }
+  private var versionLabel: some View {
+    Text("Train Tracker \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0") · 非 VIA Rail 官方产品\n无账号 · 行程保存在本机")
+      .font(.system(size: 10)).lineSpacing(4).foregroundStyle(VIATheme.muted)
+      .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+  }
+  #if DEBUG
   private var testModePanel: some View {
     VIACard(tinted: true, padding: 16, spacing: 8) {
       HStack(spacing: 12) {
@@ -248,6 +262,7 @@ struct SettingsView: View {
       }.padding(24)
     }.viaBackground().navigationTitle("测试环境").navigationBarTitleDisplayMode(.inline)
   }
+  #endif
   private func group<Content: View>(@ViewBuilder content: () -> Content) -> some View {
     VStack(spacing: 0, content: content).padding(.horizontal, 16)
       .background(VIATheme.surface, in: RoundedRectangle(cornerRadius: 20)).buttonStyle(.plain)

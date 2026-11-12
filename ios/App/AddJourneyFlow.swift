@@ -37,6 +37,12 @@ struct AddJourneyFlow: View {
     candidates.first { $0.id == chosenTrain?.id } ?? candidates.first
   }
   private var serviceDate: String { Time.serviceDate(date) }
+  /// Saved further ahead than the tracking window: no countdown or Live Activity yet.
+  private var savesAsUpcoming: Bool {
+    guard let first = legs.first else { return false }
+    return Date().timeIntervalSince1970
+      < first.planningDeparture - Double(minutes * 60) - Journey.trackingLead
+  }
   private var connectionStation: String? {
     if let index = editingIndex { return index > 0 ? legs[index - 1].alightingCode : nil }
     return legs.last?.alightingCode
@@ -402,7 +408,7 @@ struct AddJourneyFlow: View {
         }.buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier(
           planningPart == 0 ? "next-planning" : "confirm-leg")
       } else {
-        Button(initialJourney == nil ? (startOnSave ? "开启实时活动" : "保存行程") : "保存修改") { save() }
+        Button(initialJourney == nil ? (startOnSave && !savesAsUpcoming ? "开启实时活动" : "保存行程") : "保存修改") { save() }
           .buttonStyle(PrimaryButtonStyle()).disabled(legs.isEmpty).accessibilityIdentifier(
             "save-journey")
         Text("行程同时保存在本机").font(.system(size: 10)).foregroundStyle(VIATheme.muted)
@@ -502,7 +508,10 @@ struct AddJourneyFlow: View {
       TextField("行程名称（可选）", text: $name).font(.system(size: 14))
         .submitLabel(.done).focused($fieldFocused).padding(16)
         .background(VIATheme.surface, in: RoundedRectangle(cornerRadius: 14))
-      Notice(text: "实时活动最长持续 8 小时。到期后可打开 App 续开。")
+      Notice(
+        text: savesAsUpcoming
+          ? "行程会在出门前 5 小时开始倒计时；已打开「实时活动」时，届时自动显示在锁定屏幕。"
+          : "实时活动最长持续 8 小时。到期后可打开 App 续开。")
     }
   }
   private func editLeg(_ index: Int, at destination: Int) {

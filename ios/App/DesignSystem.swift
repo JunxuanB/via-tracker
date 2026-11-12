@@ -173,6 +173,28 @@ struct CountdownText: View {
     return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
   }
 }
+/// A trip still outside its tracking window shows when it happens, not a running clock.
+struct UpcomingSummary: View {
+  var journey: Journey
+  var now: Date = Date()
+  var body: some View {
+    let leg = journey.legs.first
+    let zone = leg?.boarding?.timeZone ?? "America/Toronto"
+    let leave = journey.plannedLeaveAt
+    VStack(alignment: .leading, spacing: 0) {
+      Text("计划出门").font(.system(size: 12)).foregroundStyle(VIATheme.accent)
+      Text(Projection.upcomingDayTitle(leave: leave, now: now, zone: zone))
+        .font(.system(size: 53, weight: .regular)).tracking(-2.5).minimumScaleFactor(0.6)
+        .lineLimit(1).padding(.vertical, 5)
+      Text(
+        "\(VIATheme.date(leave, zone: zone, format: "M月d日 EEE")) \(Time.format(leave, zone: zone)) 出门 · \(Time.format(leg?.boarding?.departure?.scheduledDate, zone: zone)) 发车"
+      ).font(.system(size: 12)).foregroundStyle(VIATheme.amber)
+      Label("出门前 5 小时开始倒计时", systemImage: "clock")
+        .font(.system(size: 11)).foregroundStyle(VIATheme.muted).padding(.top, 8)
+    }.frame(maxWidth: .infinity, alignment: .leading)
+      .accessibilityElement(children: .combine)
+  }
+}
 struct JourneyHero: View {
   var journey: Journey
   var now: Date = Date()

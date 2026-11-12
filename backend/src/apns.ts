@@ -121,7 +121,8 @@ export function activityStartPayload(
       "content-state": state,
       "stale-date": Math.trunc(state.validUntilEpoch),
       "attributes-type": "JourneyActivityAttributes",
-      attributes: { journeyID, ...(testSource ? { testSource } : {}) },
+      // startedAt lets the app report the true age of an activity it did not start itself.
+      attributes: { journeyID, startedAt: timestamp, ...(testSource ? { testSource } : {}) },
       alert,
     },
   };

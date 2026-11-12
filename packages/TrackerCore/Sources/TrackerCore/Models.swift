@@ -113,6 +113,14 @@ public struct TrainSnapshot: Codable, Hashable, Identifiable, Sendable {
     self.alerts = alerts
   }
 }
+extension TrainSnapshot {
+  /// A journey needs one stop to board at and a later one to get off at. Upstream
+  /// records are sometimes published without those times, typically overnight.
+  public var hasUsableSchedule: Bool {
+    guard let boarding = calls.first(where: { $0.departure?.scheduledDate != nil }) else { return false }
+    return calls.contains { $0.index > boarding.index && $0.arrival?.scheduledDate != nil }
+  }
+}
 public enum ScheduleSource: String, Codable, Sendable { case official, reference }
 public enum SyncChoice: String, Codable, Sendable { case ask, keep, automatic }
 public struct TrainLeg: Codable, Hashable, Identifiable, Sendable {
@@ -174,6 +182,9 @@ public struct Journey: Codable, Hashable, Identifiable, Sendable {
       timeIntervalSince1970: (legs.first?.planningDeparture ?? 0)
         - Double(travelToStationMinutes * 60))
   }
+  /// Countdowns and the Live Activity begin this long before the planned time to leave.
+  public static let trackingLead: TimeInterval = 5 * 3600
+  public var trackingStartsAt: Date { plannedLeaveAt.addingTimeInterval(-Self.trackingLead) }
   public init(legs: [TrainLeg], travelToStationMinutes: Int = 30) {
     self.legs = legs
     self.travelToStationMinutes = travelToStationMinutes
@@ -300,13 +311,14 @@ public struct TrainSearchIndex: Sendable {
   }
   public static func candidates(trains: [TrainSnapshot], serviceDate: String,
     previous: TrainLeg?, reusing index: TrainSearchIndex? = nil) -> TrainSearchIndex {
-    let target = Time.parse(serviceDate + "T12:00:00Z") ?? .distantPast
     let groups = Dictionary(grouping: trains, by: \.trainNumber)
     let selected = groups.values.compactMap { values -> TrainSnapshot? in
-      values.first { $0.originServiceDate == serviceDate } ?? values.min {
-        abs((Time.parse($0.originServiceDate + "T12:00:00Z") ?? .distantPast).timeIntervalSince(target))
-          < abs((Time.parse($1.originServiceDate + "T12:00:00Z") ?? .distantPast).timeIntervalSince(target))
-      }
+      // An instance published without boardable times must not hide a complete
+      // run of the same train that can lend its timetable to this date.
+      let usable = values.filter(\.hasUsableSchedule)
+      return usable.first { $0.originServiceDate == serviceDate }
+        ?? ReferenceSchedule.bestReference(usable, for: serviceDate)
+        ?? values.first { $0.originServiceDate == serviceDate }
     }.filter { train in
       guard let previous else { return true }
       guard let arrival = previous.alighting?.arrival?.scheduledDate,

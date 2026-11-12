@@ -1387,6 +1387,10 @@
           },
           "revision": {
             "type": "integer"
+          },
+          "testSource": {
+            "type": "string",
+            "maxLength": 300
           }
         },
         "required": [

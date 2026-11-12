@@ -6,9 +6,13 @@ import Foundation
     public typealias ContentState = ActivityState
     public var journeyID: String
     public var testSource: String?
-    public init(journeyID: String, testSource: String? = nil) {
+    /// Set by the server when it starts the activity remotely, so the app can
+    /// report the activity's real age instead of the moment it first saw it.
+    public var startedAt: Double?
+    public init(journeyID: String, testSource: String? = nil, startedAt: Double? = nil) {
       self.journeyID = journeyID
       self.testSource = testSource
+      self.startedAt = startedAt
     }
   }
 #endif

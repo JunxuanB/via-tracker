@@ -230,7 +230,8 @@ struct JourneyDetail: View {
     return "前往 \(j.legs.last?.alighting?.name ?? "")"
   }
   @ViewBuilder private func passengerControls(_ j: Journey, phase: Phase?) -> some View {
-    if !j.trackingEnded && (phase == .beforeDeparture || phase == .onTheWay) {
+    if !j.trackingEnded && !Projection.isUpcoming(j, now: store.qaDate ?? Date())
+      && (phase == .beforeDeparture || phase == .onTheWay) {
       Button(phase == .beforeDeparture ? "我已出门，前往车站" : "我已到达车站") {
         store.confirmPassengerProgress(id, to: phase == .beforeDeparture ? .onTheWay : .waiting)
       }.buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("confirm-passenger-progress")
@@ -279,8 +280,14 @@ struct JourneyDetail: View {
       if phase == .waiting { Notice(text: "预计时间可能变化，请留意车站广播和登车安排。", symbol: "bell") }
     }
   }
-  private func hero(_ j: Journey, now: Date) -> some View {
-    JourneyHero(journey: j, now: now, frozen: store.qaScenario != nil)
+  @ViewBuilder private func hero(_ j: Journey, now: Date) -> some View {
+    if Projection.isUpcoming(j, now: now) {
+      UpcomingSummary(journey: j, now: now)
+        .padding(.vertical, 17).padding(.horizontal, 19)
+        .background(VIATheme.tintSurface, in: RoundedRectangle(cornerRadius: 24))
+    } else {
+      JourneyHero(journey: j, now: now, frozen: store.qaScenario != nil)
+    }
   }
   @ViewBuilder private func timeline(_ j: Journey, now: Date) -> some View {
     if let leg = j.currentLeg {
@@ -350,11 +357,21 @@ struct JourneyDetail: View {
       if j.trackingEnded {
         Notice(text: "追踪已结束，行程仍保存在本机。可开启实时活动继续追踪。", symbol: "stop.circle")
       }
+      let upcoming = Projection.isUpcoming(j, now: now)
       HStack {
-        Text(store.activities.journeyID == j.id ? "实时活动进行中" : "实时活动未开启").font(.caption)
-          .foregroundStyle(.secondary)
+        Text(
+          store.activities.journeyID == j.id
+            ? "实时活动进行中"
+            : !upcoming
+              ? "实时活动未开启"
+              : store.wantsAutoStart(j.id) ? "出门前 5 小时自动开启实时活动" : "实时活动不会自动开启"
+        ).font(.caption).foregroundStyle(.secondary)
         Spacer()
-        if !j.completed {
+        if !j.completed && upcoming && store.activities.journeyID != j.id {
+          Button(store.wantsAutoStart(j.id) ? "取消自动开启" : "到时自动开启") {
+            store.setAutoStart(j, !store.wantsAutoStart(j.id))
+          }.frame(minHeight: 44)
+        } else if !j.completed {
           Button {
             activityActionPending = true
             Task {

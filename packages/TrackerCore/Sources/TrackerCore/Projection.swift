@@ -107,9 +107,29 @@ public enum Projection {
     result.manualPhase = phase
     return result
   }
+  /// A saved trip that is still more than `Journey.trackingLead` away from the
+  /// planned time to leave. It shows its date instead of a running countdown and
+  /// has no Live Activity yet.
+  public static func isUpcoming(_ journey: Journey, now: Date = Date()) -> Bool {
+    guard !journey.trackingEnded, now < journey.trackingStartsAt else { return false }
+    return state(journey, now: now)?.phase == .beforeDeparture
+  }
+  /// "今天", "明天", "后天" or "N 天后", counted in calendar days at the boarding station.
+  public static func upcomingDayTitle(leave: Date, now: Date = Date(), zone: String = "America/Toronto") -> String {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: zone) ?? TimeZone(identifier: "America/Toronto")!
+    let days = calendar.dateComponents(
+      [.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: leave)).day ?? 0
+    switch days {
+    case ...0: return "今天"
+    case 1: return "明天"
+    case 2: return "后天"
+    default: return "\(days) 天后"
+    }
+  }
   /// Every known local transition, including later legs, can be scheduled without another fetch.
   public static func timelineDates(_ journey: Journey) -> [Date] {
-    [journey.plannedLeaveAt] + journey.legs.flatMap { leg -> [Date] in
+    [journey.trackingStartsAt, journey.plannedLeaveAt] + journey.legs.flatMap { leg -> [Date] in
       [leg.boarding?.departure?.scheduledDate?.addingTimeInterval(-900),
        leg.boarding?.departure?.effectiveDate, leg.alighting?.arrival?.effectiveDate].compactMap { $0 }
     }
@@ -156,6 +176,20 @@ public enum ReferenceError: Error, LocalizedError {
 }
 public enum ReferenceSchedule {
   public enum RepeatedTime: Sendable { case first, last }
+  /// Timetables differ between weekdays and weekends, so a run from the same day
+  /// of the week is the best stand-in; otherwise the closest date, newest first.
+  public static func bestReference(_ candidates: [TrainSnapshot], for serviceDate: String) -> TrainSnapshot? {
+    guard let target = Time.parse(serviceDate + "T12:00:00Z") else { return candidates.first }
+    func rank(_ train: TrainSnapshot) -> (Int, Double, Double) {
+      guard let date = Time.parse(train.originServiceDate + "T12:00:00Z") else {
+        return (2, .greatestFiniteMagnitude, 0)
+      }
+      let days = (date.timeIntervalSince(target) / 86400).rounded()
+      let sameWeekday = Int(days) % 7 == 0
+      return (sameWeekday ? 0 : 1, abs(days), -date.timeIntervalSince1970)
+    }
+    return candidates.min { rank($0) < rank($1) }
+  }
   /// Copy station-local wall times and calendar-day offsets; never copy estimates or running evidence.
   public static func migrate(
     _ snapshot: TrainSnapshot, to targetServiceDate: String, repeatedTime: RepeatedTime? = nil

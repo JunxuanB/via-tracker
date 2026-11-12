@@ -26,10 +26,11 @@ struct AppConfiguration: Equatable, Sendable {
     return Self(environment: environment, baseURL: URL(string: Bundle.main.object(forInfoDictionaryKey: key) as? String ?? fallback)!)
   }
   static var selected: Self {
-    if let value = UserDefaults.standard.string(forKey: "selected-environment"), let environment = AppEnvironment(rawValue: value) {
-      return configuration(for: environment)
-    }
+    // Release builds have no environment switch and always use production data.
     #if DEBUG
+      if let value = UserDefaults.standard.string(forKey: "selected-environment"), let environment = AppEnvironment(rawValue: value) {
+        return configuration(for: environment)
+      }
       if let value = ProcessInfo.processInfo.environment["VIA_API_URL"], let url = URL(string: value),
         ["http", "https"].contains(url.scheme ?? ""), url.host != nil, url.user == nil, url.password == nil {
         return Self(environment: .test, baseURL: url, localOnly: true)
@@ -144,6 +145,46 @@ struct AppConfiguration: Equatable, Sendable {
   private(set) var clockNow = Date()
   private var finishedDates: [String: Double] = [:]
   private var tokenObserver: NSObjectProtocol?
+  /// Journeys whose Live Activity should start by itself when their tracking window opens.
+  private(set) var autoStartIDs: Set<String> = []
+  private var uploadedStartToken: String?
+  func wantsAutoStart(_ id: String) -> Bool { autoStartIDs.contains(id) }
+  func setAutoStart(_ journey: Journey, _ enabled: Bool) {
+    guard autoStartIDs.contains(journey.id) != enabled else { return }
+    if enabled { autoStartIDs.insert(journey.id) } else { autoStartIDs.remove(journey.id) }
+    saveAutoStart()
+    // The server holds the same choice so it can start the activity while the app is closed.
+    if let record = records.first(where: { $0.id == journey.id }) {
+      record.revision += 1
+      record.dirty = true
+      persist()
+    }
+    Task { await syncPending() }
+  }
+  private func saveAutoStart() {
+    if qaScenario == nil {
+      UserDefaults.standard.set(Array(autoStartIDs), forKey: configuration.defaultsKey("activity-autostart"))
+    }
+  }
+  /// Runs on every clock tick: opens the Live Activity once a waiting trip enters its window.
+  private func startDueActivity() async {
+    guard qaScenario == nil, isForeground, systemServicesReady, !isStartingActivity,
+      !activities.isChanging, activities.current == nil, !autoStartIDs.isEmpty else { return }
+    let active = activeJourneys
+    let finished = autoStartIDs.subtracting(active.map(\.id))
+    if !finished.isEmpty {
+      autoStartIDs.subtract(finished)
+      saveAutoStart()
+    }
+    let now = Date()
+    guard let journey = active.first(where: {
+      autoStartIDs.contains($0.id) && !Projection.isUpcoming($0, now: now)
+    }) else { return }
+    // One attempt only: a passenger who then closes the activity is not overruled.
+    autoStartIDs.remove(journey.id)
+    saveAutoStart()
+    await startActivity(journey)
+  }
   var activeJourneys: [Journey] {
     journeys.filter { !$0.trackingEnded && Projection.state($0, now: qaDate ?? clockNow)?.phase != .completed }
       .sorted { ($0.legs.first?.planningDeparture ?? 0) < ($1.legs.first?.planningDeparture ?? 0) }
@@ -238,6 +279,7 @@ struct AppConfiguration: Equatable, Sendable {
     if configuration.remotePush { UserDefaults.standard.set(true, forKey: configuration.defaultsKey("push-token-update-pending")) }
     records = (try? context.fetch(FetchDescriptor<JourneyRecord>())) ?? []
     finishedDates = UserDefaults.standard.dictionary(forKey: configuration.defaultsKey("finished-journeys")) as? [String: Double] ?? [:]
+    autoStartIDs = Set(UserDefaults.standard.stringArray(forKey: configuration.defaultsKey("activity-autostart")) ?? [])
     reloadJourneys()
     if let cached = try? context.fetch(FetchDescriptor<FeedRecord>()).first,
       let value = try? JSONDecoder().decode(TrainEnvelope.self, from: cached.payload)
@@ -246,8 +288,16 @@ struct AppConfiguration: Equatable, Sendable {
       trains = value.trains
     }
     StartupTrace.mark("cache.read.end")
+    activities.onStartToken = { [weak self] in
+      Task { @MainActor [weak self] in await self?.syncPending() }
+    }
     activities.onChange = { [weak self] in
       guard let self else { return }
+      if let id = self.activities.journeyID {
+        // Started here or by the server: either way the waiting is over.
+        if self.autoStartIDs.remove(id) != nil { self.saveAutoStart() }
+        if self.primaryID != id, self.journeys.contains(where: { $0.id == id }) { self.primaryID = id }
+      }
       for record in self.records {
         record.revision += 1
         record.dirty = true
@@ -303,6 +353,7 @@ struct AppConfiguration: Equatable, Sendable {
         await activities.end()
       }
     }
+    activities.observeRemoteStarts()
     systemServicesReady = true
     publish()
     await syncPending()
@@ -407,6 +458,11 @@ struct AppConfiguration: Equatable, Sendable {
     var j = journeys.first(where: { $0.id == journey.id }) ?? journey
     j.trackingEnded = false
     guard save(j) else { return }
+    if Projection.isUpcoming(j, now: Date()) {
+      // Too early for a countdown: remember the request and start it when the window opens.
+      setAutoStart(j, true)
+      return
+    }
     primaryID = j.id
     // ActivityManager.start ends the previous activity before requesting the new one.
     await activities.start(j)
@@ -450,6 +506,7 @@ struct AppConfiguration: Equatable, Sendable {
           state.phase != previous.phase || state.currentLegIndex != previous.currentLegIndex {
           await self.activities.update(journey)
         }
+        await self.startDueActivity()
         let now = Date()
         let next = self.journeys.flatMap { Projection.timelineDates($0) }.filter { $0 > now }.min()
         let delay = min(15, max(0.1, next?.timeIntervalSince(now) ?? 15))
@@ -584,6 +641,10 @@ struct AppConfiguration: Equatable, Sendable {
         syncRequested = true
       }
     }
+    if let token = activities.startToken, token != uploadedStartToken,
+      (try? await api.activityStartToken(token, environment: Self.apnsEnvironment)) != nil {
+      uploadedStartToken = token
+    }
     try await flushDeletions()
     // Never hold a SwiftData record across a suspension: it may be deleted by the UI.
     let ids = records.filter(\.dirty).map(\.id)
@@ -602,7 +663,10 @@ struct AppConfiguration: Equatable, Sendable {
       do {
         response = try await api.sync(SubscriptionRequest(
           journey: journey, revision: revision,
-          activity: activities.journeyID == id ? activities.session : nil))
+          activity: activities.journeyID == id ? activities.session : nil,
+          autoStart: activities.journeyID != id && autoStartIDs.contains(id)
+            && Projection.isUpcoming(journey, now: Date())
+            ? RemoteActivityStart(testSource: isTestMode ? apiBaseURL : nil) : nil))
       } catch APIClient.Failure.http(409, _) {
         let values = try await api.subscriptions()
         if let current = records.first(where: { $0.id == id }),
@@ -678,6 +742,8 @@ struct AppConfiguration: Equatable, Sendable {
     if let tokenObserver { NotificationCenter.default.removeObserver(tokenObserver) }
     tokenObserver = nil
     activities.onChange = nil
+    activities.onStartToken = nil
+    activities.stopObserving()
     await activities.end()
     for record in records { record.dirty = true; record.revision += 1 }
     persist()

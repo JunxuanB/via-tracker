@@ -97,6 +97,10 @@ struct AppBootstrap: View {
     } catch { failure = error.localizedDescription }
   }
   @MainActor private func switchEnvironment(_ target: AppEnvironment) async {
+    // The test environment exists for development builds only.
+    #if !DEBUG
+      guard target == .production else { return }
+    #endif
     guard let previous = store, !previous.isSwitchingEnvironment,
       target != previous.configuration.environment || previous.configuration.localOnly else { return }
     previous.isSwitchingEnvironment = true
@@ -111,7 +115,9 @@ struct AppBootstrap: View {
         try AppStore.openStorage(configuration: configuration)
       }.value
       await previous.prepareForEnvironmentSwitch()
-      UserDefaults.standard.set(target.rawValue, forKey: "selected-environment")
+      #if DEBUG
+        UserDefaults.standard.set(target.rawValue, forKey: "selected-environment")
+      #endif
       pendingURL = nil
       let next = AppStore(container: container, configuration: configuration)
       next.changeEnvironment = { await switchEnvironment($0) }

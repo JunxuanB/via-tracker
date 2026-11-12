@@ -12,8 +12,13 @@ import TrackerCore
   var remotePushEnabled = true
   var testSource: String?
   var onChange: (() -> Void)?
+  /// App-wide token the server uses to start an activity while the app is not running.
+  private(set) var startToken: String?
+  var onStartToken: (() -> Void)?
   private var tokenTask: Task<Void, Never>?
   private var stateTask: Task<Void, Never>?
+  private var startTokenTask: Task<Void, Never>?
+  private var remoteStartTask: Task<Void, Never>?
   private var generation = 0
   #if DEBUG
     private var previewDisabled = false
@@ -80,6 +85,46 @@ import TrackerCore
     guard generation == expectedGeneration, !isChanging else { return }
     if let activity = live.first { attach(activity) }
   }
+  /// The server starts an activity when a saved trip enters its tracking window,
+  /// and replaces one that is about to reach the system's eight-hour limit.
+  func observeRemoteStarts() {
+    if remoteStartTask == nil {
+      remoteStartTask = Task { [weak self] in
+        for await activity in Activity<JourneyActivityAttributes>.activityUpdates {
+          guard !Task.isCancelled, let self else { return }
+          await self.adopt(activity)
+        }
+      }
+    }
+    guard remotePushEnabled, startTokenTask == nil else { return }
+    startTokenTask = Task { [weak self] in
+      for await data in Activity<JourneyActivityAttributes>.pushToStartTokenUpdates {
+        guard !Task.isCancelled, let self else { return }
+        let token = data.map { String(format: "%02x", $0) }.joined()
+        if self.startToken != token {
+          self.startToken = token
+          self.onStartToken?()
+        }
+      }
+    }
+  }
+  func stopObserving() {
+    remoteStartTask?.cancel()
+    startTokenTask?.cancel()
+    remoteStartTask = nil
+    startTokenTask = nil
+  }
+  private func adopt(_ activity: Activity<JourneyActivityAttributes>) async {
+    guard !isChanging, activity.attributes.testSource == testSource, current?.id != activity.id,
+      activity.activityState == .active || activity.activityState == .stale else { return }
+    let replaced = current
+    attach(activity)
+    onChange?()
+    if let replaced {
+      UserDefaults.standard.removeObject(forKey: "activity-start-\(replaced.id)")
+      await replaced.end(nil, dismissalPolicy: .immediate)
+    }
+  }
   func start(_ journey: Journey) async {
     guard !isChanging else { return }
     isChanging = true
@@ -137,13 +182,17 @@ import TrackerCore
     tokenTask?.cancel()
     stateTask?.cancel()
     let started = UserDefaults.standard.integer(forKey: "activity-start-\(activity.id)")
-    let startedAt = started > 0 ? started : Int(Date().timeIntervalSince1970)
+    let startedAt = started > 0
+      ? started : Int(activity.attributes.startedAt ?? Date().timeIntervalSince1970)
+    if started == 0 { UserDefaults.standard.set(startedAt, forKey: "activity-start-\(activity.id)") }
+    let source = testSource
     func accept(_ data: Data) {
       guard remotePushEnabled, current?.id == activity.id else { return }
       let token = data.map { String(format: "%02x", $0) }.joined()
       guard session?.id != activity.id || session?.token != token else { return }
       session = RemoteActivitySession(
-        id: activity.id, token: token, startedAt: startedAt, revision: (session?.revision ?? 0) + 1)
+        id: activity.id, token: token, startedAt: startedAt, revision: (session?.revision ?? 0) + 1,
+        testSource: source)
       onChange?()
     }
     if let data = activity.pushToken { accept(data) }

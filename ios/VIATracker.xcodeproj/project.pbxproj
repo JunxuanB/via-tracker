@@ -257,11 +257,11 @@
 				};
 			};
 			buildConfigurationList = B7AFB10E9EACC5D05D1EF9D7 /* Build configuration list for PBXProject "VIATracker" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
-				en,
+				"zh-Hans",
 			);
 			mainGroup = 6A438EE112AF8B4B3CC32F93;
 			minimizedProjectReferenceProxies = 1;

@@ -49,11 +49,15 @@ struct RemoteActivitySession: Codable, Sendable {
   var token: String
   var startedAt: Int
   var revision: Int
+  var testSource: String? = nil
 }
+/// Asks the server to start the Live Activity when the journey's tracking window opens.
+struct RemoteActivityStart: Codable, Sendable { var testSource: String? = nil }
 struct SubscriptionRequest: Codable, Sendable {
   var journey: Journey
   var revision: Int
   var activity: RemoteActivitySession?
+  var autoStart: RemoteActivityStart? = nil
 }
 
 actor APIClient {
@@ -172,6 +176,11 @@ actor APIClient {
       body: JSONEncoder().encode(Registration(pushToken: token, environment: environment)),
       authenticated: true)
   }
+  func activityStartToken(_ token: String, environment: String) async throws {
+    _ = try await request(
+      "/v1/activity-start-token", method: "PUT",
+      body: JSONEncoder().encode(["token": token, "environment": environment]), authenticated: true)
+  }
   func configureWidgetPush(environment: String) throws {
     guard !shuttingDown, let identity else { return }
     let registration = WidgetRegistration(apiBaseURL: baseURL.absoluteString,
@@ -198,6 +207,7 @@ actor APIClient {
     if identity == nil { identity = try? InstallationIdentity.load(namespace: identityNamespace) }
     guard identity != nil else { return }
     _ = try? await request("/v1/widget-token", method: "DELETE", authenticated: true, duringShutdown: true)
+    _ = try? await request("/v1/activity-start-token", method: "DELETE", authenticated: true, duringShutdown: true)
     if publicTest {
       _ = try? await request("/v1/test-device", method: "DELETE", authenticated: true, duringShutdown: true)
       return

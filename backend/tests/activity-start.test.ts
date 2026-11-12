@@ -71,7 +71,7 @@ test("a Live Activity is started remotely once, only inside the tracking window 
     assert.equal(push.headers["apns-topic"], "com.example.app.push-type.liveactivity");
     assert.equal(push.body.aps.event, "start");
     assert.equal(push.body.aps["attributes-type"], "JourneyActivityAttributes");
-    assert.deepEqual(push.body.aps.attributes, { journeyID: today.id });
+    assert.deepEqual(push.body.aps.attributes, { journeyID: today.id, startedAt: push.body.aps.timestamp });
     assert.equal(push.body.aps["content-state"].phase, "beforeDeparture");
     assert.equal(push.body.aps["content-state"].targetEpoch, now + 3 * 3600 - 1800);
     assert.ok(push.body.aps.alert.title && push.body.aps.alert.body.includes("Origin → Destination"));
@@ -89,6 +89,18 @@ test("a Live Activity is started remotely once, only inside the tracking window 
     assert.equal(pushes[1].url, `https://api.push.apple.com/3/device/${"cd".repeat(32)}`);
     const stored = await db.prepare("SELECT auto_start FROM subscriptions WHERE id=?").bind(today.id).first<{ auto_start: string | null }>();
     assert.equal(stored?.auto_start, null);
+
+    // Two minutes before the eight-hour limit a fresh activity replaces the old one.
+    assert.equal((await call("/v1/subscriptions", "POST", { journey: today, revision: 3,
+      activity: { id: "session", token: "cd".repeat(32), startedAt: now - 28800 + 120, revision: 2 } })).status, 200);
+    pushes.length = 0;
+    await processSubscriptions(env);
+    assert.deepEqual(pushes.map((p) => p.body.aps.event), ["start", "end"]);
+    assert.ok(pushes[0].url.endsWith("ab".repeat(32)) && pushes[1].url.endsWith("cd".repeat(32)));
+    const renewed = await db.prepare("SELECT activity FROM subscriptions WHERE id=?").bind(today.id).first<{ activity: string | null }>();
+    assert.equal(renewed?.activity, null);
+    await processSubscriptions(env);
+    assert.equal(pushes.length, 2, "renewal happens once; the app registers the new session");
   } finally {
     globalThis.fetch = original;
     await runtime.dispose();

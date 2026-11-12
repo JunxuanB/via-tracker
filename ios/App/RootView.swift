@@ -351,7 +351,7 @@ struct JourneyHome: View {
           Text(j.legs.map { "VIA \($0.trainNumber)" }.joined(separator: " + ")).font(
             .system(size: 12, weight: .semibold))
           Spacer()
-          StatusPill(title: state.phase.title)
+          StatusPill(title: Projection.isUpcoming(j, now: now) ? "待出发" : state.phase.title)
         }
         VStack(alignment: .leading, spacing: 2) {
           Text(j.legs.first?.boarding?.name ?? state.origin)
@@ -364,15 +364,19 @@ struct JourneyHome: View {
           }
         }.font(.system(size: 27, weight: .semibold)).tracking(-0.7).padding(.top, 19)
         VIADivider().padding(.vertical, 19)
-        Text(state.countdownLabel).font(.system(size: 12)).foregroundStyle(VIATheme.accent)
-        CountdownText(state: state, now: now, frozen: store.qaScenario != nil, compact: true)
-          .font(.system(size: 53, weight: .regular)).tracking(-2.5).minimumScaleFactor(0.6)
-          .lineLimit(1).padding(.vertical, 5)
-        HStack {
-          Text(homeArrival(state, journey: j))
-          Spacer()
-          Image(systemName: "chevron.right")
-        }.font(.system(size: 12)).foregroundStyle(VIATheme.amber)
+        if Projection.isUpcoming(j, now: now) {
+          UpcomingSummary(journey: j, now: now)
+        } else {
+          Text(state.countdownLabel).font(.system(size: 12)).foregroundStyle(VIATheme.accent)
+          CountdownText(state: state, now: now, frozen: store.qaScenario != nil, compact: true)
+            .font(.system(size: 53, weight: .regular)).tracking(-2.5).minimumScaleFactor(0.6)
+            .lineLimit(1).padding(.vertical, 5)
+          HStack {
+            Text(homeArrival(state, journey: j))
+            Spacer()
+            Image(systemName: "chevron.right")
+          }.font(.system(size: 12)).foregroundStyle(VIATheme.amber)
+        }
         if let next = state.nextTrainNumber, let epoch = state.nextDepartureEpoch,
           j.legs.indices.contains(j.currentLegIndex + 1) {
           VStack(alignment: .leading, spacing: 5) {
@@ -396,7 +400,8 @@ struct SavedJourneyCard: View {
         Text(journey.legs.map { "VIA \($0.trainNumber)" }.joined(separator: " + "))
           .font(.system(size: 12, weight: .semibold))
         Spacer()
-        StatusPill(title: journey.trackingEnded ? "已结束追踪" : state?.phase.title ?? "待出发")
+        StatusPill(title: journey.trackingEnded ? "已结束追踪"
+          : Projection.isUpcoming(journey, now: now) ? "待出发" : state?.phase.title ?? "待出发")
       }
       Text(journey.displayTitle).font(.system(size: 18, weight: .semibold))
       HStack {

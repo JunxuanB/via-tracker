@@ -12,6 +12,8 @@ export interface ActivitySession {
   token: string;
   startedAt: number;
   revision: number;
+  /** Present for activities started from the test environment. */
+  testSource?: string;
 }
 export function validateActivity(value: unknown): ActivitySession | undefined {
   if (value == null) return undefined;
@@ -24,6 +26,7 @@ export function validateActivity(value: unknown): ActivitySession | undefined {
     token,
     startedAt: int(a.startedAt, 0, 4e10),
     revision: int(a.revision, 1, 2e9),
+    ...(a.testSource == null ? {} : { testSource: str(a.testSource, 300) }),
   };
 }
 export function validateJourney(value: unknown): Journey {

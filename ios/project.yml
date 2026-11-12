@@ -1,6 +1,8 @@
 name: VIATracker
 options:
   bundleIdPrefix: com.junxuanb.viatracker
+  # The interface uses Simplified Chinese as its development language.
+  developmentLanguage: zh-Hans
   # Xcode 27.2 rejects XcodeGen's duplicate folder references for local packages.
   postGenCommand: python3 ../scripts/fix-xcode-package-references.py
   deploymentTarget:

@@ -166,3 +166,61 @@ func cases() throws -> [ProjectionCase] {
   j.trackingEnded = true
   #expect(Projection.confirmingPassengerProgress(j, to: .waiting, now: now) == nil)
 }
+
+@Test func incompleteInstanceDoesNotHideAUsableReference() throws {
+  let complete = try cases()[0].journey.legs[0].snapshot
+  #expect(complete.hasUsableSchedule)
+  // Overnight the next run is published with arrivals only: it cannot be boarded.
+  var partial = complete
+  partial.id = "\(complete.trainNumber):2026-11-13"
+  partial.originServiceDate = "2026-11-13"
+  for i in partial.calls.indices { partial.calls[i].departure = nil }
+  #expect(!partial.hasUsableSchedule)
+  // A week-old run of the same weekday beats a nearer run of another weekday.
+  var lastWeek = complete
+  lastWeek.id = "\(complete.trainNumber):2026-11-06"
+  lastWeek.originServiceDate = "2026-11-06"
+  var yesterday = complete
+  yesterday.id = "\(complete.trainNumber):2026-11-12"
+  yesterday.originServiceDate = "2026-11-12"
+  let trains = [partial, yesterday, lastWeek]
+  let sameDay = TrainSearchIndex.candidates(trains: trains, serviceDate: "2026-11-13", previous: nil).search("")
+  #expect(sameDay.map(\.id) == [lastWeek.id])
+  let future = TrainSearchIndex.candidates(trains: trains, serviceDate: "2026-11-21", previous: nil).search("")
+  #expect(future.map(\.id) == [yesterday.id])
+  let friday = TrainSearchIndex.candidates(trains: trains, serviceDate: "2026-11-20", previous: nil).search("")
+  #expect(friday.map(\.id) == [lastWeek.id])
+  // The published run wins as soon as it is complete.
+  let exact = TrainSearchIndex.candidates(trains: trains, serviceDate: "2026-11-12", previous: nil).search("")
+  #expect(exact.map(\.id) == [yesterday.id])
+  // With nothing better, the partial run is still listed rather than hidden.
+  let only = TrainSearchIndex.candidates(trains: [partial], serviceDate: "2026-11-13", previous: nil).search("")
+  #expect(only.map(\.id) == [partial.id])
+}
+
+@Test func tripsCountDownOnlyInsideTheTrackingWindow() throws {
+  var j = try cases()[0].journey
+  let leave = j.plannedLeaveAt
+  #expect(j.trackingStartsAt == leave.addingTimeInterval(-5 * 3600))
+  #expect(Projection.isUpcoming(j, now: leave.addingTimeInterval(-3 * 86400)))
+  #expect(Projection.isUpcoming(j, now: leave.addingTimeInterval(-5 * 3600 - 1)))
+  #expect(!Projection.isUpcoming(j, now: leave.addingTimeInterval(-5 * 3600)))
+  #expect(!Projection.isUpcoming(j, now: leave.addingTimeInterval(60)))
+  #expect(Projection.timelineDates(j).contains(j.trackingStartsAt))
+  j.trackingEnded = true
+  #expect(!Projection.isUpcoming(j, now: leave.addingTimeInterval(-3 * 86400)))
+}
+
+@Test func upcomingTripsAreDescribedByCalendarDayAtTheStation() throws {
+  let leave = try #require(Time.parse("2026-11-14T00:30:00-05:00"))
+  func title(_ now: String) throws -> String {
+    Projection.upcomingDayTitle(leave: leave, now: try #require(Time.parse(now)))
+  }
+  #expect(try title("2026-11-13T23:50:00-05:00") == "明天")
+  #expect(try title("2026-11-12T08:00:00-05:00") == "后天")
+  #expect(try title("2026-11-04T08:00:00-05:00") == "10 天后")
+  #expect(try title("2026-11-14T00:10:00-05:00") == "今天")
+  // The same instant is still "tomorrow" for a station three hours behind.
+  #expect(Projection.upcomingDayTitle(leave: leave, now: try #require(Time.parse("2026-11-12T23:00:00-08:00")),
+    zone: "America/Vancouver") == "明天")
+}

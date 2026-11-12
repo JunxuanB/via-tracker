@@ -14,6 +14,7 @@ import {
 } from "./domain.ts";
 import { activityPayload, activityStartPayload, sendAPNs } from "./apns.ts";
 import type { ActivitySession } from "./validation.ts";
+const ACTIVITY_LIFETIME = 28800;
 export interface SourceState {
   version: number;
   fetched_at: string | null;
@@ -115,37 +116,43 @@ export async function refresh(env: Env): Promise<void> {
  * opens, ask the device to start one; the app then registers the new session.
  */
 async function startActivity(env: Env, row: SubscriptionRow, journey: Journey, owner: string,
-  now: number, observe?: (delivery: DeliveryObservation) => Promise<void>) {
-  if (!row.auto_start || !row.activity_start_token) return;
-  const window = trackingStart(journey);
-  if (now < window || row.auto_start_sent_for === window) return;
+  now: number, observe?: (delivery: DeliveryObservation) => Promise<void>, renewing?: ActivitySession): Promise<boolean> {
+  if (!row.activity_start_token) return false;
   const state = project(journey, now);
-  if (state.phase === "completed") return;
-  const reserved = await env.DB.prepare(
-    "UPDATE subscriptions SET auto_start_sent_for=? WHERE id=? AND revision=? AND delivery_owner=? AND activity IS NULL",
-  ).bind(window, row.id, row.revision, owner).run();
-  if (!reserved.meta.changes) return;
+  if (state.phase === "completed") return false;
   let testSource: string | undefined;
-  try {
-    const value = (JSON.parse(row.auto_start) as { testSource?: unknown }).testSource;
-    if (typeof value === "string") testSource = value;
-  } catch { /* A malformed opt-in still starts a production activity. */ }
+  if (renewing) testSource = renewing.testSource;
+  else {
+    if (!row.auto_start) return false;
+    const window = trackingStart(journey);
+    if (now < window || row.auto_start_sent_for === window) return false;
+    const reserved = await env.DB.prepare(
+      "UPDATE subscriptions SET auto_start_sent_for=? WHERE id=? AND revision=? AND delivery_owner=? AND activity IS NULL",
+    ).bind(window, row.id, row.revision, owner).run();
+    if (!reserved.meta.changes) return false;
+    try {
+      const value = (JSON.parse(row.auto_start) as { testSource?: unknown }).testSource;
+      if (typeof value === "string") testSource = value;
+    } catch { /* A malformed opt-in still starts a production activity. */ }
+  }
   const first = journey.legs[0], last = journey.legs.at(-1)!;
   const environment = row.environment ?? "sandbox";
   const result = await sendAPNs(env, row.activity_start_token, environment,
     activityStartPayload(state, now, journey.id, {
-      title: "今天的行程已开始追踪",
+      title: renewing ? "实时活动已自动续期" : "今天的行程已开始追踪",
       body: `VIA ${first.trainNumber} · ${stations(first).boarding?.name ?? first.boardingCode} → ${stations(last).alighting?.name ?? last.alightingCode}`,
     }, testSource), true, 10);
   await observe?.({ installationID: row.installation_id, kind: "activity", environment, ok: result.ok, reason: result.reason });
-  if (result.ok) return;
+  if (result.ok) return true;
   if (result.permanent)
     await env.DB.prepare("UPDATE installations SET activity_start_token=NULL WHERE id=? AND activity_start_token=?")
       .bind(row.installation_id, row.activity_start_token).run();
   // Let the next minute retry a transient failure.
-  await env.DB.prepare("UPDATE subscriptions SET auto_start_sent_for=0 WHERE id=? AND delivery_owner=?")
-    .bind(row.id, owner).run();
+  if (!renewing)
+    await env.DB.prepare("UPDATE subscriptions SET auto_start_sent_for=0 WHERE id=? AND delivery_owner=?")
+      .bind(row.id, owner).run();
   console.warn(JSON.stringify({ event: "activity_start_failed", reason: result.reason }));
+  return false;
 }
 export interface DeliveryObservation {
   installationID: string;
@@ -196,7 +203,18 @@ export async function processSubscriptions(env: Env, options?: {
         continue;
       }
       const activity = JSON.parse(row.activity) as ActivitySession;
-      if (now >= activity.startedAt + 28800) {
+      // iOS ends a Live Activity after eight hours. Shortly before that, start a
+      // fresh one so a long trip stays on the Lock Screen; the old card is dismissed.
+      if (now >= activity.startedAt + ACTIVITY_LIFETIME - 180 && now < activity.startedAt + ACTIVITY_LIFETIME
+        && await startActivity(env, row, j, deliveryOwner, now, options?.onDelivery, activity)) {
+        await env.DB.prepare(
+          "UPDATE subscriptions SET activity=NULL,last_sent=NULL WHERE id=? AND revision=? AND activity=? AND delivery_owner=?",
+        ).bind(row.id, row.revision, row.activity, deliveryOwner).run();
+        await sendAPNs(env, activity.token, row.environment ?? "sandbox",
+          { aps: { timestamp: Math.max(now, row.last_apns_timestamp + 1), event: "end", "dismissal-date": now } }, true, 10, activity.id);
+        continue;
+      }
+      if (now >= activity.startedAt + ACTIVITY_LIFETIME) {
         await env.DB.prepare(
           "UPDATE subscriptions SET activity=NULL WHERE id=? AND revision=? AND activity=? AND delivery_owner=?",
         )

@@ -196,12 +196,20 @@ struct JourneyWidgetView: View {
           Text("\(state.origin) → \(state.destination)").font(.caption).lineLimit(2)
           HStack {
             VStack(alignment: .leading, spacing: 5) {
-              Text(state.countdownLabel).font(.caption)
-              if state.phase == .completed {
+              if Projection.isUpcoming(j, now: entry.date) {
+                // Days away: a date reads better than a 70-hour timer.
+                let zone = j.legs.first?.boarding?.timeZone ?? "America/Toronto"
+                Text("\(Time.format(j.plannedLeaveAt, zone: zone, date: true)) 出门").font(.caption)
+                Text(Projection.upcomingDayTitle(leave: j.plannedLeaveAt, now: entry.date, zone: zone))
+                  .font(.title2)
+              } else if state.phase == .completed {
+                Text(state.countdownLabel).font(.caption)
                 Text("已到达").font(.title2)
               } else if state.waitingForUpdate {
+                Text(state.countdownLabel).font(.caption)
                 Text(state.elapsedTitle).font(.title2)
               } else {
+                Text(state.countdownLabel).font(.caption)
                 Text(
                   timerInterval: entry.date...max(entry.date, state.targetDate), countsDown: true
                 ).font(.title2.monospacedDigit())
