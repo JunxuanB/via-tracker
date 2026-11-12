@@ -41,6 +41,10 @@ try:
     Path(output).parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(['xcrun', 'simctl', 'io', device, 'screenshot', output], env=env,
                    check=True, timeout=30, stdout=subprocess.DEVNULL)
+    # Simulator PNGs include an alpha channel even when every pixel is opaque.
+    # Remove it to produce a consistent opaque RGB capture.
+    subprocess.run(['swift', str(Path(__file__).with_name('normalize-screenshot.swift')), output],
+                   env=env, check=True, timeout=60)
     print(output, flush=True)
 finally:
     selector.close()
