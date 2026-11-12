@@ -6,4 +6,4 @@ The root MIT licence covers original project code and documentation. It does not
 - SF Symbols are provided by Apple. The iOS app uses system symbols at runtime. Exported symbol images and generated design previews are local build outputs and must not be redistributed under this project's MIT licence.
 - Dependency licences are provided by each installed package. `backend/package-lock.json` records exact versions.
 
-The original private history contains prior design exports and a captured feed fixture; the current tree uses synthetic fixture data. Removing generated files from the current tree does not remove them from history. Review and sanitize an export or publication history before making it public; do not claim the MIT licence covers those materials.
+Prior design exports and the captured feed fixture have been removed from the published reachable history; the current tree uses synthetic fixture data. Original private backups remain local. See [publication review](docs/PUBLICATION_REVIEW.md) for scope and verification.
