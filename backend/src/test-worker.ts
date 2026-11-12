@@ -1,3 +1,4 @@
+import { authorizeConsole } from './console-auth.ts';
 import { authenticate, route } from './index.ts';
 import { APIError, boundedJSON, json, obj, sha256 } from './http.ts';
 import { normalize } from './normalize.ts';
@@ -5,7 +6,7 @@ import { feedStatements } from './train-feed.ts';
 import { processSubscriptions, type DeliveryObservation } from './service.ts';
 import { sendAPNs } from './apns.ts';
 import { seed, validate, datedFeed, editTrain, TestDataError, modes, type Feed, type Mode } from './test-data.ts';
-import sample from '../../contracts/fixtures/via-observed.json';
+import sample from '../../contracts/fixtures/via-synthetic.json';
 
 type State = { raw: string | null; mode: Mode; revision: number; last_action: string; last_read: string | null; feed_reads: number };
 const codeFor = async (id: string) => (await sha256(id)).slice(0, 8).toUpperCase();
@@ -58,12 +59,22 @@ async function summary(env: Env, state: State) {
     updatedAt: device.updated_at })));
   const logs = await env.DB.prepare('SELECT device_code,kind,accepted,reason,sent_at,environment FROM test_deliveries ORDER BY sent_at DESC LIMIT 30').all();
   return { mode: state.mode, revision: state.revision, lastRead: state.last_read, feedReads: state.feed_reads,
-    lastAction: state.last_action, public: true, pushConfigured: !!(env.APNS_PRIVATE_KEY && env.APNS_TEAM_ID && env.APNS_KEY_ID), devices, deliveries: logs.results };
+    lastAction: state.last_action, public: false, pushConfigured: !!(env.APNS_PRIVATE_KEY && env.APNS_TEAM_ID && env.APNS_KEY_ID), devices, deliveries: logs.results };
 }
-async function handle(request: Request, env: Cloudflare.TestEnv, ctx: ExecutionContext): Promise<Response> {
+export async function handle(request: Request, env: Cloudflare.TestEnv, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url), path = url.pathname;
   if (path === '/health') return json({ status: 'ok', schemaVersion: 1, environment: 'test', remotePush: true,
     pushConfigured: !!(env.APNS_PRIVATE_KEY && env.APNS_TEAM_ID && env.APNS_KEY_ID) });
+  // Passenger APIs keep their existing installation auth. Console controls,
+  // device summaries, downloads and static UI require the operator password.
+  const passengerPath = path.startsWith('/v1/') || path.startsWith('/data/');
+  if (!passengerPath && !(await authorizeConsole(request, env.OPS_TOKEN))) {
+    return new Response(env.OPS_TOKEN ? 'Operator authentication required.' : 'Console disabled.', {
+      status: env.OPS_TOKEN ? 401 : 503,
+      headers: { 'WWW-Authenticate': 'Basic realm="Train Tracker test console", charset="UTF-8"',
+        'Cache-Control': 'no-store' },
+    });
+  }
   if (path.startsWith('/internal/')) throw new APIError(404, 'not_found');
   const state = path.startsWith('/control') || path.startsWith('/v1/trains') || path.startsWith('/data/')
     ? await readState(env) : undefined;
@@ -75,7 +86,7 @@ async function handle(request: Request, env: Cloudflare.TestEnv, ctx: ExecutionC
   if (request.method === 'GET' && path === '/control/export') return json(datedFeed(JSON.parse(state!.raw!)), 200,
     { 'content-disposition': 'attachment; filename="via-public-test-data.json"' });
   if (request.method === 'POST' && path.startsWith('/control')) {
-    // The panel is deliberately public. Same-origin and size checks prevent accidental cross-site writes.
+    // Authentication is required above; same-origin and size checks also protect browser writes.
     if (request.headers.get('origin') && request.headers.get('origin') !== url.origin) throw new APIError(403, 'cross_origin_denied');
     if (request.headers.get('x-via-test') !== '1' || !request.headers.get('content-type')?.startsWith('application/json')) throw new APIError(400, 'invalid_control_request');
     if (!(await env.WRITE_LIMITER.limit({ key: 'panel:' + (request.headers.get('cf-connecting-ip') ?? 'local') })).success) throw new APIError(429, 'rate_limited');

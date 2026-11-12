@@ -37,31 +37,31 @@
     var body: some View {
       ScrollView {
         VStack(alignment: .leading, spacing: 24) {
-          Notice(text: "系统组件布局预览 · 系统锁屏与推送送达待真机验收。")
+          Notice(text: L10n.text("系统组件布局预览 · 系统锁屏与推送送达待真机验收。"))
           if scenario == "widgets" {
-            Text("小号组件").font(.headline)
+            Text(L10n.text("小号组件")).font(.headline)
             JourneyWidgetView(
               entry: JourneyEntry(date: Date(), journey: journey), familyOverride: .systemSmall
             )
             .padding(16).frame(width: 170, height: 170)
             .background(.background, in: RoundedRectangle(cornerRadius: 24))
-            Text("中号组件").font(.headline)
+            Text(L10n.text("中号组件")).font(.headline)
             JourneyWidgetView(
               entry: JourneyEntry(date: Date(), journey: journey), familyOverride: .systemMedium
             )
             .padding(16).frame(height: 170).background(
               .background, in: RoundedRectangle(cornerRadius: 24))
           } else if scenario == "islands" {
-            Notice(text: "以下复用灵动岛实际内容，外框仅为尺寸参考；长按后的系统留白仍需真机查看。")
+            Notice(text: L10n.text("以下复用灵动岛实际内容，外框仅为尺寸参考；长按后的系统留白仍需真机查看。"))
             ForEach(Phase.allCases, id: \.self) { phase in
               Text(phase.title).font(.headline)
               islandPreview(state(phase))
             }
-            Text("窄布局 · 长站名 · 超过一天").font(.headline)
+            Text(L10n.text("窄布局 · 长站名 · 超过一天")).font(.headline)
             islandPreview(longRoute, width: 300, stale: true, testMode: true)
-            Text("到达晚于下一段发车").font(.headline)
+            Text(L10n.text("到达晚于下一段发车")).font(.headline)
             islandPreview(tightConnection, width: 300, testMode: true)
-            Text("紧凑与最小内容").font(.headline)
+            Text(L10n.text("紧凑与最小内容")).font(.headline)
             HStack(spacing: 16) {
               HStack(spacing: 12) {
                 Image(systemName: longRoute.phase.symbol).foregroundStyle(VIATheme.yellow)
@@ -79,13 +79,13 @@
                 .background, in: RoundedRectangle(cornerRadius: 24))
             }
             if let state = Projection.state(journey) {
-              Text("数据较旧").font(.headline)
+              Text(L10n.text("数据较旧")).font(.headline)
               ActivitySummary(state: state, stale: true).padding(16).background(
                 .background, in: RoundedRectangle(cornerRadius: 24))
             }
           }
         }.padding(24)
-      }.viaBackground().navigationTitle("系统组件")
+      }.viaBackground().navigationTitle(L10n.text("系统组件"))
     }
     private func islandPreview(
       _ state: TrackerCore.ActivityState, width: CGFloat = 350, stale: Bool = false,

@@ -2,7 +2,7 @@
 const http=require('http');
 const fs=require('fs');
 const path=require('path');
-const sample=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../contracts/fixtures/via-observed.json'),'utf8'));
+const sample=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../../contracts/fixtures/via-synthetic.json'),'utf8'));
 http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://fixture');
   res.setHeader('content-type','application/json');

@@ -1,0 +1,2786 @@
+{
+  "30 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "31 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "32 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "33 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "34 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "35 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "36 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "37 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "38 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "39 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "40 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "41 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "42 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "43 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "44 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "45 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "46 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "47 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "48 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "49 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "50 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "51 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "52 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "53 (10-29)": {
+    "instance": "2026-10-29",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-29T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-29T12:00:00-04:00",
+          "estimated": "2026-10-29T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T14:00:00-04:00",
+          "estimated": "2026-10-29T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-29T14:05:00-04:00",
+          "estimated": "2026-10-29T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-29T16:00:00-04:00",
+          "estimated": "2026-10-29T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "30": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "31": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "32": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "33": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "34": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "35": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "36": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "37": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "38": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "39": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "40": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "41": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "42": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "43": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "44": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "45": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "46": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "47": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "48": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "49": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "50": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "51": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "52": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  },
+  "53": {
+    "instance": "2026-10-30",
+    "from": "DEMO ORIGIN",
+    "to": "DEMO DESTINATION",
+    "departed": true,
+    "arrived": false,
+    "lat": 44.1,
+    "lng": -76.1,
+    "poll": "2026-10-30T13:00:00-04:00",
+    "alerts": [
+      {
+        "header": {
+          "en": "Synthetic test notice",
+          "fr": "Avis de test fictif"
+        },
+        "description": {
+          "en": "Example advisory for automated tests. Not an operator notice.",
+          "fr": "Exemple fictif pour les tests."
+        }
+      }
+    ],
+    "times": [
+      {
+        "station": "Demo Origin",
+        "code": "TRTO",
+        "tz": "America/Toronto",
+        "departure": {
+          "scheduled": "2026-10-30T12:00:00-04:00",
+          "estimated": "2026-10-30T12:00:30-04:00"
+        },
+        "eta": "ARR"
+      },
+      {
+        "station": "Demo Connection",
+        "code": "OTTW",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T14:00:00-04:00",
+          "estimated": "2026-10-30T14:00:30-04:00"
+        },
+        "departure": {
+          "scheduled": "2026-10-30T14:05:00-04:00",
+          "estimated": "2026-10-30T14:05:30-04:00"
+        },
+        "eta": "1h"
+      },
+      {
+        "station": "Demo Destination",
+        "code": "MTRL",
+        "tz": "America/Toronto",
+        "arrival": {
+          "scheduled": "2026-10-30T16:00:00-04:00",
+          "estimated": "2026-10-30T16:00:30-04:00"
+        },
+        "eta": "3h"
+      }
+    ]
+  }
+}

@@ -139,7 +139,9 @@ async function startActivity(env: Env, row: SubscriptionRow, journey: Journey, o
   const environment = row.environment ?? "sandbox";
   const result = await sendAPNs(env, row.activity_start_token, environment,
     activityStartPayload(state, now, journey.id, {
-      title: renewing ? "实时活动已自动续期" : "今天的行程已开始追踪",
+      title: journey.notificationLanguage === "en"
+        ? (renewing ? "Live Activity renewed" : "Trip tracking started")
+        : (renewing ? "实时活动已自动续期" : "今天的行程已开始追踪"),
       body: `VIA ${first.trainNumber} · ${stations(first).boarding?.name ?? first.boardingCode} → ${stations(last).alighting?.name ?? last.alightingCode}`,
     }, testSource), true, 10);
   await observe?.({ installationID: row.installation_id, kind: "activity", environment, ok: result.ok, reason: result.reason });

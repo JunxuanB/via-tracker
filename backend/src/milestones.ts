@@ -5,29 +5,30 @@ import type { DeliveryObservation, SubscriptionRow } from './service.ts';
 type Milestone = { key: string; at: number; title: string; body: string };
 export function dueMilestones(journey: Journey, now: number): Milestone[] {
   const events: Milestone[] = [];
+  const t = (zh: string, en: string) => journey.notificationLanguage === "en" ? en : zh;
   const resolved = resolvedJourney(journey, now);
   const first = journey.legs[0];
   const leave = first.planningDeparture - journey.travelToStationMinutes * 60;
-  events.push({ key: `leave:${first.id}`, at: leave, title: '该出门了',
-    body: `准备前往 ${stations(first).boarding?.name ?? first.boardingCode}，乘坐 VIA ${first.trainNumber}。` });
+  events.push({ key: `leave:${first.id}`, at: leave, title: t('该出门了', "Time to leave"),
+    body: t(`准备前往 ${stations(first).boarding?.name ?? first.boardingCode}，乘坐 VIA ${first.trainNumber}。`, `Head to ${stations(first).boarding?.name ?? first.boardingCode} for VIA ${first.trainNumber}.`) });
   journey.legs.forEach((leg, index) => {
     const { boarding, alighting } = stations(leg);
     const departure = epoch(boarding?.departure?.estimated) ?? epoch(boarding?.departure?.scheduled) ?? leg.planningDeparture;
     const arrival = epoch(alighting?.arrival?.estimated) ?? epoch(alighting?.arrival?.scheduled);
     const key = `${leg.id}:${leg.trainNumber}:${leg.originServiceDate}:${leg.boardingIndex}:${leg.alightingIndex}`;
     const destination = alighting?.name ?? leg.alightingCode;
-    events.push({ key: `${key}:boarding`, at: departure - 900, title: `VIA ${leg.trainNumber} 即将发车`,
-      body: `距 ${boarding?.name ?? leg.boardingCode} 发车还有约 ${Math.max(1, Math.ceil((departure - now) / 60))} 分钟，请留意站内乘车信息。` });
-    if (index <= resolved.currentLegIndex) events.push({ key: `${key}:departed`, at: departure, title: `VIA ${leg.trainNumber} 已到发车时间`,
-      body: `本段目的地：${destination}。祝旅途愉快！` });
+    events.push({ key: `${key}:boarding`, at: departure - 900, title: t(`VIA ${leg.trainNumber} 即将发车`, `VIA ${leg.trainNumber} departs soon`),
+      body: t(`距 ${boarding?.name ?? leg.boardingCode} 发车还有约 ${Math.max(1, Math.ceil((departure - now) / 60))} 分钟，请留意站内乘车信息。`, `About ${Math.max(1, Math.ceil((departure - now) / 60))} min until departure from ${boarding?.name ?? leg.boardingCode}. Check station boarding information.`) });
+    if (index <= resolved.currentLegIndex) events.push({ key: `${key}:departed`, at: departure, title: t(`VIA ${leg.trainNumber} 已到发车时间`, `VIA ${leg.trainNumber} departure time`),
+      body: t(`本段目的地：${destination}。祝旅途愉快！`, `Bound for ${destination}. Enjoy your trip!`) });
     const reached = index < resolved.currentLegIndex || (resolved.completed && index === journey.legs.length - 1);
     const reportedArrival = leg.source === 'official' && (alighting?.reached === true
       || (leg.snapshot.arrived && leg.alightingIndex === leg.snapshot.calls.at(-1)?.index));
     const observedAt = Math.min(now, epoch(leg.snapshot.sourceFetchedAt) ?? now);
     if (arrival !== undefined && !reached && index === resolved.currentLegIndex && now >= departure && now < arrival) {
       events.push({ key: `${key}:approaching`, at: Math.max(departure, arrival - 600),
-        title: `即将到达 ${destination}`,
-        body: `预计约 ${Math.max(1, Math.ceil((arrival - now) / 60))} 分钟后到达${index === journey.legs.length - 1 ? '目的地' : '换乘站'}，请准备好随身物品。` });
+        title: t(`即将到达 ${destination}`, `Approaching ${destination}`),
+        body: t(`预计约 ${Math.max(1, Math.ceil((arrival - now) / 60))} 分钟后到达${index === journey.legs.length - 1 ? '目的地' : '换乘站'}，请准备好随身物品。`, `About ${Math.max(1, Math.ceil((arrival - now) / 60))} min until your ${index === journey.legs.length - 1 ? "destination" : "connection"}. Gather your belongings.`) });
     }
     for (const stop of leg.snapshot.calls) {
       if (stop.index <= leg.boardingIndex || stop.index >= leg.alightingIndex || index > resolved.currentLegIndex) continue;
@@ -35,13 +36,13 @@ export function dueMilestones(journey: Journey, now: number): Milestone[] {
       const confirmed = leg.source === 'official' && stop.reached === true;
       if (!confirmed && stopArrival === undefined) continue;
       events.push({ key: `${key}:stop:${stop.index}:${stop.code}`, at: confirmed ? observedAt : stopArrival!,
-        title: confirmed ? `已到达经停站 ${stop.name}` : `预计到达经停站 ${stop.name}`,
-        body: `VIA ${leg.trainNumber} · 本段目的地：${destination}。` });
+        title: confirmed ? t(`已到达经停站 ${stop.name}`, `Reached ${stop.name}`) : t(`预计到达经停站 ${stop.name}`, `Estimated arrival at ${stop.name}`),
+        body: t(`VIA ${leg.trainNumber} · 本段目的地：${destination}。`, `VIA ${leg.trainNumber} · Bound for ${destination}.`) });
     }
     if (arrival !== undefined && reached) events.push({ key: `${key}:arrived`, at: reportedArrival ? observedAt : arrival,
-      title: index === journey.legs.length - 1 ? `欢迎来到 ${destination}` : `已到达 ${destination}`,
-      body: index === journey.legs.length - 1 ? '本次行程已完成，记得带好随身物品。'
-        : `准备换乘 VIA ${journey.legs[index + 1].trainNumber}，请留意下一段发车时间。` });
+      title: index === journey.legs.length - 1 ? t(`欢迎来到 ${destination}`, `Welcome to ${destination}`) : t(`已到达 ${destination}`, `Arrived at ${destination}`),
+      body: index === journey.legs.length - 1 ? t('本次行程已完成，记得带好随身物品。', "Your trip is complete. Remember your belongings.")
+        : t(`准备换乘 VIA ${journey.legs[index + 1].trainNumber}，请留意下一段发车时间。`, `Connect to VIA ${journey.legs[index + 1].trainNumber}. Check the next departure time.`) });
   });
   return events.filter(event => event.at <= now);
 }
@@ -84,7 +85,7 @@ export async function deliverMilestones(env: Env, row: SubscriptionRow, journey:
   }
   if (journey.pendingScheduleChange && !row.notification_state && row.push_token) {
     const result = await sendAPNs(env, row.push_token, row.environment ?? 'sandbox', {
-      aps: { alert: { title: '发车时间有变化', body: '打开行程，看看是否需要调整出门时间。' }, sound: 'default', 'thread-id': journey.id },
+      aps: { alert: { title: journey.notificationLanguage === 'en' ? 'Departure time changed' : '发车时间有变化', body: journey.notificationLanguage === 'en' ? 'Open your trip to review when to leave.' : '打开行程，看看是否需要调整出门时间。' }, sound: 'default', 'thread-id': journey.id },
       journeyID: journey.id,
     }, false, 10, `${journey.id}:schedule`);
     if (result.ok) await env.DB.prepare("UPDATE subscriptions SET notification_state='sent' WHERE id=? AND delivery_owner=?")

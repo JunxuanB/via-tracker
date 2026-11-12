@@ -103,3 +103,14 @@ test('confirmed stop arriving later than its ETA uses the report time', () => {
   assert.equal(stop?.at, base + 1600);
   assert.equal(stop?.title, '已到达经停站 Stop');
 });
+
+test('English notifications preserve milestone identity and legacy Chinese defaults', () => {
+  const j = journey();
+  const legacy = dueMilestones(j, base + 1200);
+  j.notificationLanguage = 'en';
+  const english = dueMilestones(j, base + 1200);
+  assert.deepEqual(english.map(e => [e.key, e.at]), legacy.map(e => [e.key, e.at]));
+  assert.ok(legacy.some(e => e.title === '该出门了'));
+  assert.ok(english.some(e => e.title === 'Time to leave'));
+  for (const event of english) assert.doesNotMatch(event.title + event.body, /\p{Script=Han}/u);
+});

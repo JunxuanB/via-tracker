@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 cd "${0:A:h:h}"
-export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+export DEVELOPER_DIR=${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}
 mkdir -p tmp
 (cd packages/TrackerCore && swift test) > tmp/swift-tests.log 2>&1
 (cd backend && npm run check && npm test) > tmp/backend-tests.log 2>&1

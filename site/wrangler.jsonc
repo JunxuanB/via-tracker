@@ -1,0 +1,10 @@
+{
+  "$schema": "../backend/node_modules/wrangler/config-schema.json",
+  "name": "via-tracker-support",
+  "compatibility_date": "2026-11-12",
+  "workers_dev": true,
+  "assets": {
+    "directory": "../build/public-site"
+  },
+  "triggers": { "crons": [] }
+}

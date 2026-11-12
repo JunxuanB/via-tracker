@@ -1356,6 +1356,14 @@
           },
           "scheduleChangePrompted": {
             "type": "boolean"
+          },
+          "notificationLanguage": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh-Hans"
+            ],
+            "description": "Server notification language. Omitted by older clients; defaults to Simplified Chinese."
           }
         },
         "required": [

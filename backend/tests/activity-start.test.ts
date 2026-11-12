@@ -54,6 +54,7 @@ test("a Live Activity is started remotely once, only inside the tracking window 
 
     const now = Math.floor(Date.now() / 1000);
     const today = journey(now + 3 * 3600), nextWeek = journey(now + 7 * 86400), manual = journey(now + 2 * 3600);
+    today.notificationLanguage = "en";
     assert.equal((await call("/v1/subscriptions", "POST", { journey: today, revision: 1, autoStart: {} })).status, 201);
     assert.equal((await call("/v1/subscriptions", "POST", { journey: nextWeek, revision: 1, autoStart: {} })).status, 201);
     assert.equal((await call("/v1/subscriptions", "POST", { journey: manual, revision: 1 })).status, 201);
@@ -74,7 +75,8 @@ test("a Live Activity is started remotely once, only inside the tracking window 
     assert.deepEqual(push.body.aps.attributes, { journeyID: today.id, startedAt: push.body.aps.timestamp });
     assert.equal(push.body.aps["content-state"].phase, "beforeDeparture");
     assert.equal(push.body.aps["content-state"].targetEpoch, now + 3 * 3600 - 1800);
-    assert.ok(push.body.aps.alert.title && push.body.aps.alert.body.includes("Origin → Destination"));
+    assert.equal(push.body.aps.alert.title, "Trip tracking started");
+    assert.ok(push.body.aps.alert.body.includes("Origin → Destination"));
     assert.ok(new TextEncoder().encode(JSON.stringify(push.body)).length < 4096);
 
     await processSubscriptions(env);
@@ -96,6 +98,7 @@ test("a Live Activity is started remotely once, only inside the tracking window 
     pushes.length = 0;
     await processSubscriptions(env);
     assert.deepEqual(pushes.map((p) => p.body.aps.event), ["start", "end"]);
+    assert.equal(pushes[0].body.aps.alert.title, "Live Activity renewed");
     assert.ok(pushes[0].url.endsWith("ab".repeat(32)) && pushes[1].url.endsWith("cd".repeat(32)));
     const renewed = await db.prepare("SELECT activity FROM subscriptions WHERE id=?").bind(today.id).first<{ activity: string | null }>();
     assert.equal(renewed?.activity, null);

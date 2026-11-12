@@ -70,8 +70,8 @@ test("a changed route is never patched with stops from the old one", () => {
   assert.ok(!train.qualityFlags?.includes("retained_station_events"));
 });
 
-test("the observed feed is unchanged by repair and client snapshots are not repaired", () => {
-  const raw = JSON.parse(readFileSync(new URL("../../contracts/fixtures/via-observed.json", import.meta.url), "utf8"));
+test("the complete synthetic feed is unchanged by repair and client snapshots are not repaired", () => {
+  const raw = JSON.parse(readFileSync(new URL("../../contracts/fixtures/via-synthetic.json", import.meta.url), "utf8"));
   const strict = normalize(raw, "2026-10-31T02:00:00Z", 1, { repair: false });
   const repaired = normalize(raw, "2026-10-31T02:00:00Z", 1);
   const events = (trains: TrainSnapshot[]) => trains.map((train) => train.calls.map((call) =>

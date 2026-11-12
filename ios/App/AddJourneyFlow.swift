@@ -75,7 +75,7 @@ struct AddJourneyFlow: View {
           VStack(alignment: .leading, spacing: 22) {
             if initialJourney == nil {
               HStack {
-                Text("添加行程 · \(step == 3 ? 3 : step < 2 ? 1 : 2)/3")
+                Text(L10n.text("添加行程 · %@/3", String(describing: step == 3 ? 3 : step < 2 ? 1 : 2)))
                   .font(.caption).foregroundStyle(VIATheme.muted)
                 Spacer()
                 HStack(spacing: 5) {
@@ -107,10 +107,10 @@ struct AddJourneyFlow: View {
           .toolbar(.hidden, for: .navigationBar)
           .safeAreaInset(edge: .top, spacing: 0) {
             VIANavigationBar(
-              title: initialJourney != nil && step == 3 ? "编辑行程" : step == 0
-                ? "选择列车"
-                : step == 1 ? "乘车区间" : step == 2 ? (planningPart == 0 ? "规划时间" : "前往耗时") : "确认行程",
-              back: initialJourney != nil && step == 3 ? "关闭" : step == 0 ? (legs.isEmpty ? "取消" : "返回") : "返回",
+              title: initialJourney != nil && step == 3 ? L10n.text("编辑行程") : step == 0
+                ? L10n.text("选择列车")
+                : step == 1 ? L10n.text("乘车区间") : step == 2 ? (planningPart == 0 ? L10n.text("规划时间") : L10n.text("前往耗时")) : L10n.text("确认行程"),
+              back: initialJourney != nil && step == 3 ? L10n.text("关闭") : step == 0 ? (legs.isEmpty ? L10n.text("取消") : L10n.text("返回")) : L10n.text("返回"),
               onBack: {
                 if initialJourney != nil && step == 3 { requestCancel() }
                 else if step == 0 && legs.isEmpty { requestCancel() }
@@ -118,44 +118,44 @@ struct AddJourneyFlow: View {
                 else { back() }
               }
             ) {
-              if !(initialJourney != nil && step == 3) && (step > 0 || !legs.isEmpty) { Button("取消") { requestCancel() } }
+              if !(initialJourney != nil && step == 3) && (step > 0 || !legs.isEmpty) { Button(L10n.text("取消")) { requestCancel() } }
             }
           }
           .safeAreaInset(edge: .bottom, spacing: 0) { footer }
           .sheet(item: Binding(get: { picker.map { PickerKind(id: $0) } }, set: { picker = $0?.id }))
         { kind in stationPicker(kind.id) }
-          .alert("无法继续", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } }))
+          .alert(L10n.text("无法继续"), isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } }))
         {
-          Button("好", role: .cancel) {}
+          Button(L10n.text("好"), role: .cancel) {}
         } message: {
           Text(error ?? "")
         }
-          .confirmationDialog("放弃本次修改？", isPresented: $confirmDiscard, titleVisibility: .visible) {
-            Button("放弃修改", role: .destructive) { dismiss() }
-            Button("继续编辑", role: .cancel) {}
-          } message: { Text("未保存的内容将丢失，已保存的行程不会改变。") }
-          .confirmationDialog("调整可能与官方时刻不符", isPresented: $confirmPlanning, titleVisibility: .visible)
+          .confirmationDialog(L10n.text("放弃本次修改？"), isPresented: $confirmDiscard, titleVisibility: .visible) {
+            Button(L10n.text("放弃修改"), role: .destructive) { dismiss() }
+            Button(L10n.text("继续编辑"), role: .cancel) {}
+          } message: { Text(L10n.text("未保存的内容将丢失，已保存的行程不会改变。")) }
+          .confirmationDialog(L10n.text("调整可能与官方时刻不符"), isPresented: $confirmPlanning, titleVisibility: .visible)
         {
-          Button("使用我的规划时间") { commitLeg() }
+          Button(L10n.text("使用我的规划时间")) { commitLeg() }
         } message: {
-          Text("此修改只影响计划出门，不会改变官方时刻。")
+          Text(L10n.text("此修改只影响计划出门，不会改变官方时刻。"))
         }
           .confirmationDialog(
-            "夏令时重复时刻",
+            L10n.text("夏令时重复时刻"),
             isPresented: Binding(
               get: { ambiguousTrain != nil }, set: { if !$0 { ambiguousTrain = nil } }),
             titleVisibility: .visible
           ) {
-            Button("使用较早的一次") {
+            Button(L10n.text("使用较早的一次")) {
               if let train = ambiguousTrain { pick(train, repeatedTime: .first) }
               ambiguousTrain = nil
             }
-            Button("使用较晚的一次") {
+            Button(L10n.text("使用较晚的一次")) {
               if let train = ambiguousTrain { pick(train, repeatedTime: .last) }
               ambiguousTrain = nil
             }
           } message: {
-            Text("目标日期的部分站点时刻出现两次，请确认参考时刻映射。不存在的时刻仍无法借用。")
+            Text(L10n.text("目标日期的部分站点时刻出现两次，请确认参考时刻映射。不存在的时刻仍无法借用。"))
           }
           .task {
             guard !initialized else { return }
@@ -205,39 +205,39 @@ struct AddJourneyFlow: View {
     let visibleTrains = candidates
     let chosenID = visibleTrains.first(where: { $0.id == chosenTrain?.id })?.id ?? visibleTrains.first?.id
     return LazyVStack(alignment: .leading, spacing: 18) {
-      Text(connectionStation == nil ? "选择列车" : "添加同站换乘").font(.system(size: 32, weight: .semibold))
-      Text("按车次号或车站搜索，选择始发服务日期。").font(.system(size: 13)).foregroundStyle(VIATheme.muted)
+      Text(connectionStation == nil ? L10n.text("选择列车") : L10n.text("添加同站换乘")).font(.system(size: 32, weight: .semibold))
+      Text(L10n.text("按车次号或车站搜索，选择始发服务日期。")).font(.system(size: 13)).foregroundStyle(VIATheme.muted)
       HStack(spacing: 8) {
         Image(systemName: "magnifyingglass").foregroundStyle(VIATheme.muted)
-        TextField("搜索车次或车站", text: $query).submitLabel(.done)
+        TextField(L10n.text("搜索车次或车站"), text: $query).submitLabel(.done)
           .autocorrectionDisabled().textInputAutocapitalization(.never).focused($fieldFocused)
         if !query.isEmpty {
-          Button("清除搜索", systemImage: "xmark.circle.fill") { query = "" }
+          Button(L10n.text("清除搜索"), systemImage: "xmark.circle.fill") { query = "" }
             .labelStyle(.iconOnly).foregroundStyle(VIATheme.muted).frame(minWidth: 44, minHeight: 44)
         }
       }.font(.system(size: 14)).padding(13).background(
         VIATheme.line, in: RoundedRectangle(cornerRadius: 12))
       VIACard(padding: 15) {
-        DatePicker("始发服务日期", selection: $date, displayedComponents: .date).datePickerStyle(.compact)
+        DatePicker(L10n.text("始发服务日期"), selection: $date, displayedComponents: .date).datePickerStyle(.compact)
           .font(.system(size: 14)).environment(\.timeZone, TimeZone(identifier: "America/Toronto")!)
       }
-      Picker("班次", selection: $notDepartedOnly) {
-        Text("全部班次").tag(false)
-        Text("尚未发车").tag(true)
+      Picker(L10n.text("班次"), selection: $notDepartedOnly) {
+        Text(L10n.text("全部班次")).tag(false)
+        Text(L10n.text("尚未发车")).tag(true)
       }.pickerStyle(.segmented)
       if let connectionStation {
         Notice(
-          text: "下一段上车站固定为 \(legs.last?.alighting?.name ?? connectionStation)，仅支持同站换乘。",
+          text: L10n.text("下一段上车站固定为 %@，仅支持同站换乘。", String(describing: legs.last?.alighting?.name ?? connectionStation)),
           symbol: "arrow.triangle.branch")
       }
       if let message = store.sourceMessage { Notice(text: message) }
       if indexing {
-        ProgressView("正在查找列车…").frame(maxWidth: .infinity)
+        ProgressView(L10n.text("正在查找列车…")).frame(maxWidth: .infinity)
       } else if visibleTrains.isEmpty {
         ContentUnavailableView(
-          connectionStation == nil ? "暂无可用班次" : "暂无同站可接续班次", systemImage: "tram",
-          description: Text("可更换日期；缺少参考车次时无法生成时刻。"))
-        Button("刷新列车数据") { Task { await store.refresh() } }
+          connectionStation == nil ? L10n.text("暂无可用班次") : L10n.text("暂无同站可接续班次"), systemImage: "tram",
+          description: Text(L10n.text("可更换日期；缺少参考车次时无法生成时刻。")))
+        Button(L10n.text("刷新列车数据")) { Task { await store.refresh() } }
       }
       ForEach(visibleTrains) { train in
         Button {
@@ -246,7 +246,7 @@ struct AddJourneyFlow: View {
           VStack(alignment: .leading, spacing: 8) {
             TrainRow(train: train, selected: chosenID == train.id)
             if train.originServiceDate != serviceDate {
-              Text("参考时刻 · 出发前请确认班次").font(.caption).foregroundStyle(
+              Text(L10n.text("参考时刻 · 出发前请确认班次")).font(.caption).foregroundStyle(
                 VIATheme.accent
               ).padding(.horizontal, 20)
             }
@@ -257,8 +257,8 @@ struct AddJourneyFlow: View {
   }
   private var stationStep: some View {
     VStack(alignment: .leading, spacing: 20) {
-      Text("选择上下车站").font(.system(size: 32, weight: .semibold))
-      Text("点击车站，从本班列车的停靠站中选择。").font(.system(size: 13)).foregroundStyle(VIATheme.muted)
+      Text(L10n.text("选择上下车站")).font(.system(size: 32, weight: .semibold))
+      Text(L10n.text("点击车站，从本班列车的停靠站中选择。")).font(.system(size: 13)).foregroundStyle(VIATheme.muted)
       if let selected {
         VIACard(padding: 17) {
           HStack {
@@ -267,14 +267,14 @@ struct AddJourneyFlow: View {
             Text(selected.originServiceDate).font(.system(size: 12)).foregroundStyle(VIATheme.muted)
           }
         }
-        if selectedSource == .reference { Notice(text: "这是参考时刻，出发前请确认列车是否开行。") }
+        if selectedSource == .reference { Notice(text: L10n.text("这是参考时刻，出发前请确认列车是否开行。")) }
 
         VIACard {
           Button {
             if connectionStation == nil { picker = "boarding" }
           } label: {
             stationField(
-              "上车站", call: selected.calls.first { $0.index == boarding }, event: \.departure)
+              L10n.text("上车站"), call: selected.calls.first { $0.index == boarding }, event: \.departure)
           }.buttonStyle(.plain).disabled(connectionStation != nil).accessibilityIdentifier(
             "boarding-station")
           Divider()
@@ -282,10 +282,10 @@ struct AddJourneyFlow: View {
             picker = "alighting"
           } label: {
             stationField(
-              "下车站", call: selected.calls.first { $0.index == alighting }, event: \.arrival)
+              L10n.text("下车站"), call: selected.calls.first { $0.index == alighting }, event: \.arrival)
           }.buttonStyle(.plain).accessibilityIdentifier("alighting-station")
         }
-        VIASectionLabel(title: "本段停靠")
+        VIASectionLabel(title: L10n.text("本段停靠"))
         VIACard {
           StationTimeline(
             calls: selected.calls, boardingIndex: boarding, alightingIndex: alighting,
@@ -299,42 +299,42 @@ struct AddJourneyFlow: View {
     _ title: String, call: StationCall?, event: KeyPath<StationCall, EventTime?>
   ) -> some View {
     HStack(spacing: 12) {
-      Image(systemName: title == "上车站" ? "location" : "mappin.and.ellipse").foregroundStyle(
+      Image(systemName: title == L10n.text("上车站") ? "location" : "mappin.and.ellipse").foregroundStyle(
         VIATheme.accent)
       Text(title).font(.system(size: 14))
       Spacer()
-      Text(call?.name ?? "请选择").font(.system(size: 14, weight: .medium))
+      Text(call?.name ?? L10n.text("请选择")).font(.system(size: 14, weight: .medium))
       Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(VIATheme.accent)
     }.frame(minHeight: 38).contentShape(Rectangle())
   }
 
   private var planningStep: some View {
     VStack(alignment: .leading, spacing: 20) {
-      Text(planningPart == 0 ? "确认发车时间" : "前往车站耗时").font(.system(size: 32, weight: .semibold))
-      Text(planningPart == 0 ? "我们会根据这个时间提醒你出门。" : "包含前往车站及自行预留的时间。")
+      Text(planningPart == 0 ? L10n.text("确认发车时间") : L10n.text("前往车站耗时")).font(.system(size: 32, weight: .semibold))
+      Text(planningPart == 0 ? L10n.text("我们会根据这个时间提醒你出门。") : L10n.text("包含前往车站及自行预留的时间。"))
         .font(.system(size: 13)).foregroundStyle(VIATheme.muted)
       if planningPart == 0 {
         VIACard {
           HStack {
-            Text("官方计划").foregroundStyle(VIATheme.muted)
+            Text(L10n.text("官方计划")).foregroundStyle(VIATheme.muted)
             Spacer()
             Text(
               Time.format(selected?.calls.first { $0.index == boarding }?.departure?.scheduledDate, zone: boardingZone))
           }.font(.system(size: 14))
         }
-        DatePicker("规划发车", selection: $planning, displayedComponents: [.date, .hourAndMinute])
+        DatePicker(L10n.text("规划发车"), selection: $planning, displayedComponents: [.date, .hourAndMinute])
           .datePickerStyle(.wheel).labelsHidden().frame(maxWidth: .infinity)
           .environment(
             \.timeZone,
             TimeZone(
               identifier: selected?.calls.first { $0.index == boarding }?.timeZone
                 ?? "America/Toronto")!)
-        Notice(text: "规划时间由你设置。列车延误不会自动推迟计划出门。")
+        Notice(text: L10n.text("规划时间由你设置。列车延误不会自动推迟计划出门。"))
       } else {
         VIACard {
           HStack {
             VStack(alignment: .leading, spacing: 6) {
-              Text("前往上车站").font(.system(size: 12)).foregroundStyle(VIATheme.muted)
+              Text(L10n.text("前往上车站")).font(.system(size: 12)).foregroundStyle(VIATheme.muted)
               Text(selected?.calls.first { $0.index == boarding }?.name ?? "").font(
                 .system(size: 16, weight: .semibold))
             }
@@ -343,25 +343,25 @@ struct AddJourneyFlow: View {
           }
         }
         HStack {
-          minuteButton("minus", label: "减少15分钟") { minutes = max(0, minutes - 15) }.disabled(
+          minuteButton("minus", label: L10n.text("减少15分钟")) { minutes = max(0, minutes - 15) }.disabled(
             minutes == 0)
           Spacer()
           VStack(spacing: 10) {
             Text("\(minutes)").font(.system(size: 88, weight: .light)).tracking(-6)
               .monospacedDigit()
-            Text("分钟").font(.system(size: 13)).foregroundStyle(VIATheme.muted)
-          }.accessibilityElement(children: .ignore).accessibilityLabel("前往车站 \(minutes) 分钟")
+            Text(L10n.text("分钟")).font(.system(size: 13)).foregroundStyle(VIATheme.muted)
+          }.accessibilityElement(children: .ignore).accessibilityLabel(L10n.text("前往车站 %@ 分钟", String(describing: minutes)))
           Spacer()
-          minuteButton("plus", label: "增加15分钟") { minutes = min(1440, minutes + 15) }.disabled(
+          minuteButton("plus", label: L10n.text("增加15分钟")) { minutes = min(1440, minutes + 15) }.disabled(
             minutes == 1440)
         }.padding(.vertical, 28)
-        Text("每次调整 15 分钟 · 最少 0 分钟").font(.system(size: 10)).foregroundStyle(VIATheme.muted).frame(
+        Text(L10n.text("每次调整 15 分钟 · 最少 0 分钟")).font(.system(size: 10)).foregroundStyle(VIATheme.muted).frame(
           maxWidth: .infinity)
         VIACard(tinted: true, padding: 20, spacing: 14) {
-          Text("计划出门时间").font(.system(size: 12)).foregroundStyle(VIATheme.accent)
+          Text(L10n.text("计划出门时间")).font(.system(size: 12)).foregroundStyle(VIATheme.accent)
           Text(Time.format(planning.addingTimeInterval(-Double(minutes * 60)), zone: boardingZone))
             .font(.system(size: 46)).tracking(-2).monospacedDigit()
-          Text("规划发车 \(Time.format(planning, zone: boardingZone)) − 前往耗时 \(minutes) 分钟").font(.system(size: 12))
+          Text(L10n.text("规划发车 %@ − 前往耗时 %@ 分钟", String(describing: Time.format(planning, zone: boardingZone)), String(describing: minutes))).font(.system(size: 12))
             .foregroundStyle(VIATheme.muted)
         }
       }
@@ -378,10 +378,10 @@ struct AddJourneyFlow: View {
   private var footer: some View {
     VStack(spacing: 10) {
       if step == 0 {
-        Button("下一步") { if let train = resolvedTrain { pick(train) } }
+        Button(L10n.text("下一步")) { if let train = resolvedTrain { pick(train) } }
           .buttonStyle(PrimaryButtonStyle()).disabled(indexing || candidates.isEmpty || appliedQuery != query)
       } else if step == 1 {
-        Button("下一步") {
+        Button(L10n.text("下一步")) {
           if let departure = selected?.calls.first(where: { $0.index == boarding })?.departure?
             .scheduledDate
           {
@@ -392,7 +392,7 @@ struct AddJourneyFlow: View {
         }.buttonStyle(PrimaryButtonStyle()).disabled(boarding == nil || alighting == nil)
           .accessibilityIdentifier("next-stations")
       } else if step == 2 {
-        Button(planningPart == 0 ? "下一步" : "预览行程") {
+        Button(planningPart == 0 ? L10n.text("下一步") : L10n.text("预览行程")) {
           if planningPart == 0 && (legs.isEmpty || editingIndex == 0) {
             planningPart = 1
           } else {
@@ -408,10 +408,10 @@ struct AddJourneyFlow: View {
         }.buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier(
           planningPart == 0 ? "next-planning" : "confirm-leg")
       } else {
-        Button(initialJourney == nil ? (startOnSave && !savesAsUpcoming ? "开启实时活动" : "保存行程") : "保存修改") { save() }
+        Button(initialJourney == nil ? (startOnSave && !savesAsUpcoming ? L10n.text("开启实时活动") : L10n.text("保存行程")) : L10n.text("保存修改")) { save() }
           .buttonStyle(PrimaryButtonStyle()).disabled(legs.isEmpty).accessibilityIdentifier(
             "save-journey")
-        Text("行程同时保存在本机").font(.system(size: 10)).foregroundStyle(VIATheme.muted)
+        Text(L10n.text("行程同时保存在本机")).font(.system(size: 10)).foregroundStyle(VIATheme.muted)
       }
     }.padding(.horizontal, 24).padding(.vertical, 12)
       .frame(maxWidth: 700).frame(maxWidth: .infinity).background(VIATheme.background)
@@ -419,15 +419,15 @@ struct AddJourneyFlow: View {
   }
   private var reviewStep: some View {
     VStack(alignment: .leading, spacing: 20) {
-      Text(initialJourney != nil ? "调整行程安排" : legs.count > 1 ? "确认换乘行程" : "确认行程").font(.system(size: 32, weight: .semibold))
-      Text(initialJourney != nil ? "修改乘车区间、出门安排或行程名称，保存后生效。" : "核对乘车区间和计划出门时间。").font(.system(size: 13)).foregroundStyle(VIATheme.muted)
+      Text(initialJourney != nil ? L10n.text("调整行程安排") : legs.count > 1 ? L10n.text("确认换乘行程") : L10n.text("确认行程")).font(.system(size: 32, weight: .semibold))
+      Text(initialJourney != nil ? L10n.text("修改乘车区间、出门安排或行程名称，保存后生效。") : L10n.text("核对乘车区间和计划出门时间。")).font(.system(size: 13)).foregroundStyle(VIATheme.muted)
       ForEach(Array(legs.enumerated()), id: \.element.id) { i, leg in
         VIACard(padding: 17, spacing: 16) {
           HStack {
             Label("VIA \(leg.trainNumber)", systemImage: "tram.fill").font(
               .system(size: 12, weight: .semibold))
             Spacer()
-            Button("修改") {
+            Button(L10n.text("修改")) {
               editLeg(i, at: 1)
             }.font(.subheadline).frame(minWidth: 44, minHeight: 44).foregroundStyle(VIATheme.accent)
           }
@@ -460,23 +460,23 @@ struct AddJourneyFlow: View {
               }
             }.font(.system(size: 14))
           }
-          if leg.source == .reference { StatusPill(title: "参考时刻", warning: true) }
+          if leg.source == .reference { StatusPill(title: L10n.text("参考时刻"), warning: true) }
           if i > 0, let previous = legs[i - 1].alighting?.arrival?.effectiveDate,
             let departure = leg.boarding?.departure?.scheduledDate
           {
-            Text("同站接续间隔 \(Int(departure.timeIntervalSince(previous)/60)) 分钟").font(
+            Text(L10n.text("同站接续间隔 %@ 分钟", String(describing: Int(departure.timeIntervalSince(previous)/60)))).font(
               .system(size: 12)
             ).foregroundStyle(VIATheme.accent)
           }
           if i == legs.count - 1 && legs.count > 1 {
-            Button("移除末段", role: .destructive) { legs.removeLast() }.font(.system(size: 12))
+            Button(L10n.text("移除末段"), role: .destructive) { legs.removeLast() }.font(.system(size: 12))
           }
         }
       }
       if let first = legs.first {
         VIACard(padding: 16, spacing: 0) {
           HStack {
-            Label("计划出门", systemImage: "house").foregroundStyle(VIATheme.accent)
+            Label(L10n.text("计划出门"), systemImage: "house").foregroundStyle(VIATheme.accent)
             Spacer()
             Text(
               Time.format(
@@ -485,33 +485,33 @@ struct AddJourneyFlow: View {
           }.frame(minHeight: 40)
           VIADivider()
           HStack {
-            Label("前往车站", systemImage: "figure.walk")
+            Label(L10n.text("前往车站"), systemImage: "figure.walk")
             Spacer()
-            Text("\(minutes) 分钟")
+            Text(L10n.text("%@ 分钟", String(describing: minutes)))
           }.frame(minHeight: 55)
-          Button("调整出门安排", systemImage: "clock") { editLeg(0, at: 2) }
+          Button(L10n.text("调整出门安排"), systemImage: "clock") { editLeg(0, at: 2) }
             .frame(minHeight: 44).foregroundStyle(VIATheme.accent)
           if initialJourney == nil {
             VIADivider()
-            Toggle("实时活动", isOn: $startOnSave).tint(VIATheme.yellow).frame(minHeight: 55)
+            Toggle(L10n.text("实时活动"), isOn: $startOnSave).tint(VIATheme.yellow).frame(minHeight: 55)
           }
         }.font(.system(size: 14))
       }
-      Button("添加同站换乘", systemImage: "plus") {
+      Button(L10n.text("添加同站换乘"), systemImage: "plus") {
         editingIndex = nil
         chosenTrain = nil
         query = ""
         if let last = legs.last?.alighting?.arrival?.scheduledDate { date = last }
         step = 0
       }.buttonStyle(SecondaryButtonStyle()).disabled(legs.count >= 16)
-      Text("行程名称").font(.subheadline.weight(.medium))
-      TextField("行程名称（可选）", text: $name).font(.system(size: 14))
+      Text(L10n.text("行程名称")).font(.subheadline.weight(.medium))
+      TextField(L10n.text("行程名称（可选）"), text: $name).font(.system(size: 14))
         .submitLabel(.done).focused($fieldFocused).padding(16)
         .background(VIATheme.surface, in: RoundedRectangle(cornerRadius: 14))
       Notice(
         text: savesAsUpcoming
-          ? "行程会在出门前 5 小时开始倒计时；已打开「实时活动」时，届时自动显示在锁定屏幕。"
-          : "实时活动最长持续 8 小时。到期后可打开 App 续开。")
+          ? L10n.text("行程会在出门前 5 小时开始倒计时；已打开「实时活动」时，届时自动显示在锁定屏幕。")
+          : L10n.text("实时活动最长持续 8 小时。到期后可打开 App 续开。"))
     }
   }
   private func editLeg(_ index: Int, at destination: Int) {
@@ -546,7 +546,7 @@ struct AddJourneyFlow: View {
       if let previous = legs.last?.alighting?.arrival?.scheduledDate, editingIndex == nil,
         let dep = b.departure?.scheduledDate, dep < previous
       {
-        error = "此班次计划发车早于上一段计划到达，请更换日期或车次。"
+        error = L10n.text("此班次计划发车早于上一段计划到达，请更换日期或车次。")
         return
       }
       selected = snapshot
@@ -557,7 +557,7 @@ struct AddJourneyFlow: View {
       if repeatedTime == nil {
         ambiguousTrain = train
       } else {
-        error = "该日期包含不存在的夏令时时刻，请更换日期或等待正式时刻。"
+        error = L10n.text("该日期包含不存在的夏令时时刻，请更换日期或等待正式时刻。")
       }
     } catch { self.error = error.localizedDescription }
   }
@@ -609,7 +609,7 @@ struct AddJourneyFlow: View {
     guard !legs.isEmpty else { return }
     for i in legs.indices.dropFirst() {
       if legs[i - 1].alightingCode != legs[i].boardingCode {
-        error = "第 \(i+1) 段与上一段不是同站接续，请修改车段。"
+        error = L10n.text("第 %@ 段与上一段不是同站接续，请修改车段。", String(describing: i+1))
         return
       }
     }
@@ -619,7 +619,7 @@ struct AddJourneyFlow: View {
     j.title = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200))
     j.currentLegIndex = min(j.currentLegIndex, legs.count - 1)
     guard store.save(j) else {
-      error = store.storageError ?? "行程未能保存，请重试。"
+      error = store.storageError ?? L10n.text("行程未能保存，请重试。")
       return
     }
     store.selectedJourneyID = j.id
@@ -694,8 +694,8 @@ struct AddJourneyFlow: View {
         }.background(VIATheme.surface, in: RoundedRectangle(cornerRadius: 20)).padding(24)
       }.viaBackground().toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .top) {
-          VIANavigationBar(title: kind == "boarding" ? "选择上车站" : "选择下车站") {
-            Button("完成") { picker = nil }
+          VIANavigationBar(title: kind == "boarding" ? L10n.text("选择上车站") : L10n.text("选择下车站")) {
+            Button(L10n.text("完成")) { picker = nil }
           }
         }
     }.presentationDetents([.medium, .large])

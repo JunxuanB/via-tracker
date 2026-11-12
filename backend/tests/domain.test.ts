@@ -30,10 +30,10 @@ for (const c of cases)
       assert.equal(state.connectionMinutes, c.expectedConnectionMinutes);
     validateJourney(c.journey);
   });
-test("real observation normalizes without inventing actual events", () => {
+test("synthetic feed normalizes without inventing actual events", () => {
   const raw = JSON.parse(
     readFileSync(
-      new URL("../../contracts/fixtures/via-observed.json", import.meta.url),
+      new URL("../../contracts/fixtures/via-synthetic.json", import.meta.url),
       "utf8",
     ),
   );
@@ -48,7 +48,7 @@ test("bad and empty source rejected; individual malformed records tolerated", ()
   assert.throws(() => normalize([], "", 1));
   const raw = JSON.parse(
     readFileSync(
-      new URL("../../contracts/fixtures/via-observed.json", import.meta.url),
+      new URL("../../contracts/fixtures/via-synthetic.json", import.meta.url),
       "utf8",
     ),
   );
@@ -196,4 +196,14 @@ test("passenger confirmations use revised departure and expire at departure", ()
     delete boarding.departure!.estimated;
     assert.equal(project(j, departure - 1201).targetIsEstimate, false);
   }
+});
+
+test('notification language is optional, validated, and retained during reconciliation', () => {
+  const j = structuredClone(cases[0].journey);
+  assert.equal(validateJourney(j).notificationLanguage, undefined);
+  j.notificationLanguage = 'en';
+  const validated = validateJourney(j);
+  assert.equal(validated.notificationLanguage, 'en');
+  assert.equal(reconcile(validated, []).notificationLanguage, 'en');
+  assert.throws(() => validateJourney({ ...j, notificationLanguage: 'invalid' }));
 });

@@ -25,7 +25,7 @@ import TrackerCore
     func configurePreview(_ scenario: String) {
       previewDisabled = scenario == "activity-off"
       enabled = !previewDisabled
-      if scenario == "expired" { message = "实时活动已结束，可以重新开启。" }
+      if scenario == "expired" { message = L10n.text("实时活动已结束，可以重新开启。") }
     }
   #endif
   private(set) var enabled = false
@@ -45,10 +45,10 @@ import TrackerCore
   }
   var journeyID: String? { current?.attributes.journeyID }
   var status: String {
-    if isChanging { return "正在更新实时活动…" }
-    if current != nil { return "实时活动已开启" }
-    if !enabled { return "系统未允许实时活动" }
-    return message ?? "尚未开启实时活动"
+    if isChanging { return L10n.text("正在更新实时活动…") }
+    if current != nil { return L10n.text("实时活动已开启") }
+    if !enabled { return L10n.text("系统未允许实时活动") }
+    return message ?? L10n.text("尚未开启实时活动")
   }
   func feedback(for id: String) -> String? {
     messageJourneyID == nil || messageJourneyID == id ? message : nil
@@ -74,7 +74,7 @@ import TrackerCore
       clearCurrent()
       if old.activityState == .dismissed { await old.end(nil, dismissalPolicy: .immediate) }
       guard generation == expectedGeneration, !isChanging else { return }
-      report("实时活动已关闭，点「开启实时活动」即可重新显示。", journeyID: old.attributes.journeyID)
+      report(L10n.text("实时活动已关闭，点「开启实时活动」即可重新显示。"), journeyID: old.attributes.journeyID)
     }
     // A dismissed card can remain in ActivityKit's registry. End it explicitly
     // before dropping the handle so a subsequent request starts a fresh session.
@@ -131,15 +131,15 @@ import TrackerCore
     generation += 1
     let operation = generation
     defer { if generation == operation { isChanging = false } }
-    report("正在开启…", journeyID: journey.id)
+    report(L10n.text("正在开启…"), journeyID: journey.id)
     await refreshAuthorization()
     guard generation == operation else { return }
     guard enabled else {
-      report("系统未允许实时活动，请前往设置开启。", journeyID: journey.id)
+      report(L10n.text("系统未允许实时活动，请前往设置开启。"), journeyID: journey.id)
       return
     }
     guard let state = Projection.state(journey), state.phase != .completed else {
-      report("已到达目的地，无需再开启实时活动。", journeyID: journey.id)
+      report(L10n.text("已到达目的地，无需再开启实时活动。"), journeyID: journey.id)
       return
     }
     // Clear the old session before requesting a new token, including an activity dismissed outside the app.
@@ -162,9 +162,9 @@ import TrackerCore
       UserDefaults.standard.set(
         Int(Date().timeIntervalSince1970), forKey: "activity-start-\(activity.id)")
       attach(activity)
-      report("已开启，可在锁定屏幕查看行程。", journeyID: journey.id)
+      report(L10n.text("已开启，可在锁定屏幕查看行程。"), journeyID: journey.id)
     } catch {
-      report("暂时无法开启：\(error.localizedDescription)。请检查系统的实时活动设置后重试。", journeyID: journey.id)
+      report(L10n.text("暂时无法开启：%@。请检查系统的实时活动设置后重试。", String(describing: error.localizedDescription)), journeyID: journey.id)
     }
   }
   private func clearCurrent() {
@@ -209,7 +209,7 @@ import TrackerCore
           self.clearCurrent()
           if state == .dismissed { await activity.end(nil, dismissalPolicy: .immediate) }
           guard self.current == nil else { return }
-          self.report("实时活动已关闭，点「开启实时活动」即可重新显示。", journeyID: activity.attributes.journeyID)
+          self.report(L10n.text("实时活动已关闭，点「开启实时活动」即可重新显示。"), journeyID: activity.attributes.journeyID)
           return
         }
       }
@@ -223,7 +223,7 @@ import TrackerCore
       clearCurrent()
       if current.activityState == .dismissed { await current.end(nil, dismissalPolicy: .immediate) }
       guard self.current == nil else { return }
-      report("实时活动已关闭，可以重新开启。", journeyID: journey.id)
+      report(L10n.text("实时活动已关闭，可以重新开启。"), journeyID: journey.id)
       return
     }
     if state.phase == .completed { await end(finalState: state); return }
@@ -239,7 +239,7 @@ import TrackerCore
     defer { if generation == operation { isChanging = false } }
     await finishCurrent(finalState: finalState)
     guard generation == operation else { return }
-    report(finalState == nil ? "实时活动已关闭，行程仍保留。" : "已到达，欢迎来到 \(finalState!.destination)。", journeyID: id)
+    report(finalState == nil ? L10n.text("实时活动已关闭，行程仍保留。") : L10n.text("已到达，欢迎来到 %@。", String(describing: finalState!.destination)), journeyID: id)
   }
   private func finishCurrent(finalState: TrackerCore.ActivityState? = nil) async {
     let ending = current

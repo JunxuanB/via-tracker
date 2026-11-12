@@ -1,3 +1,4 @@
+import TrackerCore
 import OSLog
 import SwiftUI
 import UserNotifications
@@ -60,14 +61,14 @@ struct AppBootstrap: View {
               VIATheme.tintSurface, in: RoundedRectangle(cornerRadius: 24))
           Text("Train Tracker").font(.system(size: 27, weight: .semibold))
           if let failure {
-            Text("无法打开本地行程").font(.headline)
+            Text(L10n.text("无法打开本地行程")).font(.headline)
             Text(failure).font(.system(size: 13)).multilineTextAlignment(.center).foregroundStyle(
               VIATheme.muted)
-            Button("重试") { Task { await load() } }.buttonStyle(PrimaryButtonStyle()).frame(
+            Button(L10n.text("重试")) { Task { await load() } }.buttonStyle(PrimaryButtonStyle()).frame(
               maxWidth: 240)
           } else {
             ProgressView().tint(VIATheme.accent)
-            Text(takingLonger ? "正在打开本地数据，请稍候…" : "正在载入行程")
+            Text(takingLonger ? L10n.text("正在打开本地数据，请稍候…") : L10n.text("正在载入行程"))
               .font(.system(size: 13)).foregroundStyle(VIATheme.muted)
           }
         }.padding(32).frame(maxWidth: .infinity, maxHeight: .infinity).viaBackground()
@@ -123,7 +124,7 @@ struct AppBootstrap: View {
       next.changeEnvironment = { await switchEnvironment($0) }
       store = next
     } catch {
-      previous.environmentError = "暂时无法切换环境，请检查连接后重试。原有行程仍保留。"
+      previous.environmentError = L10n.text("暂时无法切换环境，请检查连接后重试。原有行程仍保留。")
     }
   }
 }

@@ -1,6 +1,56 @@
 import XCTest
 
 @MainActor final class JourneyFlowTests: XCTestCase {
+  func testEnglishTripEditor() throws {
+    let app = XCUIApplication()
+    app.launchEnvironment["VIA_QA_SCENARIO"] = "before"
+    app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_CA"]
+    app.launch()
+    let progress = app.buttons["confirm-passenger-progress"]
+    XCTAssertTrue(progress.waitForExistence(timeout: 20))
+    XCTAssertEqual(progress.label, "I've left for the station")
+    progress.tap()
+    XCTAssertEqual(progress.label, "I've arrived at the station")
+    app.buttons["Manage trip"].tap()
+    app.buttons["Edit trip"].tap()
+    XCTAssertTrue(app.staticTexts["Adjust trip plans"].waitForExistence(timeout: 5))
+    let edit = app.buttons["Adjust leave time"]
+    for _ in 0..<8 where !edit.isHittable { app.swipeUp() }
+    edit.tap()
+    XCTAssertTrue(app.staticTexts["Confirm departure time"].waitForExistence(timeout: 5))
+  }
+
+  func testEnglishOnboarding() throws {
+    let app = XCUIApplication()
+    app.launchEnvironment["VIA_QA_SCENARIO"] = "empty"
+    app.launchEnvironment["VIA_QA_ONBOARDING_ID"] = UUID().uuidString
+    app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_CA"]
+    app.launch()
+    XCTAssertTrue(app.staticTexts["Independently developed · Unofficial"].waitForExistence(timeout: 20))
+    let next = app.buttons["onboarding-next"]
+    for _ in 0..<8 where !next.isHittable { app.swipeUp() }
+    next.tap()
+    let finish = app.buttons["onboarding-finish"]
+    XCTAssertTrue(finish.waitForExistence(timeout: 5))
+    for _ in 0..<8 where !finish.isHittable { app.swipeUp() }
+    finish.tap()
+    XCTAssertTrue(app.buttons["Add your first trip"].waitForExistence(timeout: 10))
+  }
+
+  func testEnglishSettingsAndUpcomingTrip() throws {
+    let app = XCUIApplication()
+    app.launchEnvironment["VIA_QA_SCENARIO"] = "settings"
+    app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_CA"]
+    app.launch()
+    XCTAssertTrue(app.staticTexts["Manage appearance, planning and data."].waitForExistence(timeout: 20))
+    XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Data source'")).firstMatch.exists)
+    app.terminate()
+    app.launchEnvironment["VIA_QA_SCENARIO"] = "upcoming"
+    app.launch()
+    XCTAssertTrue(app.staticTexts["In 3 days"].waitForExistence(timeout: 20))
+    XCTAssertTrue(app.staticTexts["Countdown starts 5 hours before leaving"].exists)
+  }
+
   func testProductionPassengerProgressAndEditor() throws {
     let app = XCUIApplication()
     app.launchEnvironment["VIA_QA_SCENARIO"] = "before"
@@ -165,6 +215,15 @@ import XCTest
     let app = XCUIApplication()
     app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
     app.launch()
+    let next = app.buttons["onboarding-next"]
+    if next.waitForExistence(timeout: 5) {
+      for _ in 0..<8 where !next.isHittable { app.swipeUp() }
+      next.tap()
+      let finish = app.buttons["onboarding-finish"]
+      XCTAssertTrue(finish.waitForExistence(timeout: 5))
+      for _ in 0..<8 where !finish.isHittable { app.swipeUp() }
+      finish.tap()
+    }
     let trains = app.buttons["列车"]
     guard trains.waitForExistence(timeout: 10) else { throw XCTSkip("iPhone tab bar smoke check") }
     trains.tap()

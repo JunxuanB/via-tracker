@@ -105,7 +105,7 @@ struct CurrentJourneyWidget: Widget {
       JourneyWidgetView(entry: entry).containerBackground(for: .widget) {
         Color(uiColor: .secondarySystemBackground)
       }
-    }.pushHandler(JourneyWidgetPushHandler.self).configurationDisplayName("当前行程").description("查看当前车段、倒计时和同站换乘。").supportedFamilies([
+    }.pushHandler(JourneyWidgetPushHandler.self).configurationDisplayName(L10n.text("当前行程")).description(L10n.text("查看当前车段、倒计时和同站换乘。")).supportedFamilies([
       .systemSmall, .systemMedium,
     ])
   }

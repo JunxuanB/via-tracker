@@ -33,7 +33,7 @@ test("OpenAPI parses and shared Swift/TypeScript fixtures conform to the documen
   const trains = normalize(
     JSON.parse(
       readFileSync(
-        new URL("../../contracts/fixtures/via-observed.json", import.meta.url),
+        new URL("../../contracts/fixtures/via-synthetic.json", import.meta.url),
         "utf8",
       ),
     ),

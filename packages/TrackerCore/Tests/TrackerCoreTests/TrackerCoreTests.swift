@@ -216,11 +216,11 @@ func cases() throws -> [ProjectionCase] {
   func title(_ now: String) throws -> String {
     Projection.upcomingDayTitle(leave: leave, now: try #require(Time.parse(now)))
   }
-  #expect(try title("2026-11-13T23:50:00-05:00") == "明天")
-  #expect(try title("2026-11-12T08:00:00-05:00") == "后天")
-  #expect(try title("2026-11-04T08:00:00-05:00") == "10 天后")
-  #expect(try title("2026-11-14T00:10:00-05:00") == "今天")
-  // The same instant is still "tomorrow" for a station three hours behind.
-  #expect(Projection.upcomingDayTitle(leave: leave, now: try #require(Time.parse("2026-11-12T23:00:00-08:00")),
-    zone: "America/Vancouver") == "明天")
+  #expect(try title("2026-11-13T23:50:00-05:00") == L10n.text("明天"))
+  #expect(try title("2026-11-12T08:00:00-05:00") == L10n.text("后天"))
+  #expect(try title("2026-11-04T08:00:00-05:00") == L10n.text("%@ 天后", "10"))
+  #expect(try title("2026-11-14T00:10:00-05:00") == L10n.text("今天"))
+  // Use an instant safely before Vancouver midnight under both UTC−7 and UTC−8 rules.
+  #expect(Projection.upcomingDayTitle(leave: leave, now: try #require(Time.parse("2026-11-12T21:00:00-08:00")),
+    zone: "America/Vancouver") == L10n.text("明天"))
 }

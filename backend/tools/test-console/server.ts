@@ -12,7 +12,7 @@ const arg = (key: string, fallback: string) => {
 const host = arg('--host', '127.0.0.1');
 const port = Number(arg('--port', '4318'));
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Port must be between 1024 and 65535');
-const sample: Feed = JSON.parse(await readFile(new URL('../../../contracts/fixtures/via-observed.json', import.meta.url), 'utf8'));
+const sample: Feed = JSON.parse(await readFile(new URL('../../../contracts/fixtures/via-synthetic.json', import.meta.url), 'utf8'));
 const staticFiles = new Map(await Promise.all([
   ['/', 'index.html', 'text/html; charset=utf-8'],
   ['/app.js', 'app.js', 'text/javascript; charset=utf-8'],

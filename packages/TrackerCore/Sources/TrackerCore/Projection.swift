@@ -22,19 +22,19 @@ public struct ActivityState: Codable, Hashable, Sendable {
   public var targetDate: Date { Date(timeIntervalSince1970: targetEpoch) }
   public var elapsedTitle: String {
     switch phase {
-    case .beforeDeparture: "该出门了"
-    case .onTheWay, .waiting, .transferring: "已到发车时间"
-    case .riding, .completed: "已到达"
+    case .beforeDeparture: L10n.text("该出门了")
+    case .onTheWay, .waiting, .transferring: L10n.text("已到发车时间")
+    case .riding, .completed: L10n.text("已到达")
     }
   }
   public var countdownLabel: String {
     switch phase {
-    case .beforeDeparture: "距计划出门"
-    case .onTheWay: targetIsEstimate ? "距预计发车" : "距计划发车"
-    case .waiting: targetIsEstimate ? "距预计发车" : "距计划发车"
-    case .riding: "距 \(destination) \(targetIsEstimate ? "预计" : "计划")到达"
-    case .transferring: targetIsEstimate ? "距下一段预计发车" : "距下一段计划发车"
-    case .completed: "已到达 \(destination)"
+    case .beforeDeparture: L10n.text("距计划出门")
+    case .onTheWay: targetIsEstimate ? L10n.text("距预计发车") : L10n.text("距计划发车")
+    case .waiting: targetIsEstimate ? L10n.text("距预计发车") : L10n.text("距计划发车")
+    case .riding: L10n.text(targetIsEstimate ? "距 %@ 预计到达" : "距 %@ 计划到达", destination)
+    case .transferring: targetIsEstimate ? L10n.text("距下一段预计发车") : L10n.text("距下一段计划发车")
+    case .completed: L10n.text("已到达 %@", String(describing: destination))
     }
   }
 }
@@ -121,10 +121,10 @@ public enum Projection {
     let days = calendar.dateComponents(
       [.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: leave)).day ?? 0
     switch days {
-    case ...0: return "今天"
-    case 1: return "明天"
-    case 2: return "后天"
-    default: return "\(days) 天后"
+    case ...0: return L10n.text("今天")
+    case 1: return L10n.text("明天")
+    case 2: return L10n.text("后天")
+    default: return L10n.text("%@ 天后", String(describing: days))
     }
   }
   /// Every known local transition, including later legs, can be scheduled without another fetch.
@@ -168,9 +168,9 @@ public enum ReferenceError: Error, LocalizedError {
   case invalidDate, ambiguousTime, missingStations
   public var errorDescription: String? {
     switch self {
-    case .invalidDate: "日期无效"
-    case .ambiguousTime: "该日期存在夏令时时间歧义，请选择其他日期或等待正式时刻。"
-    case .missingStations: "没有可借用的完整乘车区间。"
+    case .invalidDate: L10n.text("日期无效")
+    case .ambiguousTime: L10n.text("该日期存在夏令时时间歧义，请选择其他日期或等待正式时刻。")
+    case .missingStations: L10n.text("没有可借用的完整乘车区间。")
     }
   }
 }

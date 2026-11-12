@@ -23,7 +23,7 @@ enum VIATheme {
   static let line = adaptive(0xe5e4dc, 0x414138)
   static let amber = adaptive(0x94601a, 0xecc381)
   static let amberSurface = adaptive(0xf9edd9, 0x413622)
-  static func date(_ date: Date, zone: String = "America/Toronto", format: String = "M月d日 EEEE")
+  static func date(_ date: Date, zone: String = "America/Toronto", format: String = L10n.text("M月d日 EEEE"))
     -> String
   {
     Time.formatted(date, zone: zone, pattern: format)
@@ -147,7 +147,7 @@ struct CountdownText: View {
   var body: some View {
     Group {
       if state.phase == .completed {
-        Text("已到达")
+        Text(L10n.text("已到达"))
       } else if now >= state.targetDate || state.waitingForUpdate {
         Text(state.elapsedTitle)
       } else if frozen || compact {
@@ -157,18 +157,18 @@ struct CountdownText: View {
       }
     }.monospacedDigit().accessibilityLabel(
       state.phase == .completed
-        ? "行程已完成"
+        ? L10n.text("行程已完成")
         : now >= state.targetDate
           ? state.elapsedTitle
-          : "\(state.countdownLabel)，\(max(0,Int(state.targetDate.timeIntervalSince(now)/60))) 分钟")
+          : L10n.text("%@，%@ 分钟", String(describing: state.countdownLabel), String(describing: max(0,Int(state.targetDate.timeIntervalSince(now)/60)))))
   }
   private static func duration(_ seconds: Int, compact: Bool) -> String {
     let h = seconds / 3600
     let m = (seconds % 3600) / 60
     let s = seconds % 60
     if compact {
-      if seconds > 0 && seconds < 60 { return "不到 1 分钟" }
-      return h > 0 ? "\(h) 小时 \(m) 分" : "\(m) 分钟"
+      if seconds > 0 && seconds < 60 { return L10n.text("不到 1 分钟") }
+      return h > 0 ? L10n.text("%@ 小时 %@ 分", String(describing: h), String(describing: m)) : L10n.text("%@ 分钟", String(describing: m))
     }
     return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
   }
@@ -182,14 +182,14 @@ struct UpcomingSummary: View {
     let zone = leg?.boarding?.timeZone ?? "America/Toronto"
     let leave = journey.plannedLeaveAt
     VStack(alignment: .leading, spacing: 0) {
-      Text("计划出门").font(.system(size: 12)).foregroundStyle(VIATheme.accent)
+      Text(L10n.text("计划出门")).font(.system(size: 12)).foregroundStyle(VIATheme.accent)
       Text(Projection.upcomingDayTitle(leave: leave, now: now, zone: zone))
         .font(.system(size: 53, weight: .regular)).tracking(-2.5).minimumScaleFactor(0.6)
         .lineLimit(1).padding(.vertical, 5)
       Text(
-        "\(VIATheme.date(leave, zone: zone, format: "M月d日 EEE")) \(Time.format(leave, zone: zone)) 出门 · \(Time.format(leg?.boarding?.departure?.scheduledDate, zone: zone)) 发车"
+        L10n.text("%@ %@ 出门 · %@ 发车", String(describing: VIATheme.date(leave, zone: zone, format: L10n.text("M月d日 EEE"))), String(describing: Time.format(leave, zone: zone)), String(describing: Time.format(leg?.boarding?.departure?.scheduledDate, zone: zone)))
       ).font(.system(size: 12)).foregroundStyle(VIATheme.amber)
-      Label("出门前 5 小时开始倒计时", systemImage: "clock")
+      Label(L10n.text("出门前 5 小时开始倒计时"), systemImage: "clock")
         .font(.system(size: 11)).foregroundStyle(VIATheme.muted).padding(.top, 8)
     }.frame(maxWidth: .infinity, alignment: .leading)
       .accessibilityElement(children: .combine)
@@ -209,7 +209,7 @@ struct JourneyHero: View {
         HStack {
           StatusPill(title: state.phase.title, symbol: state.phase.symbol)
           Spacer()
-          Text("VIA \(state.trainNumber) · 第 \(state.currentLegIndex+1) 段")
+          Text(L10n.text("VIA %@ · 第 %@ 段", String(describing: state.trainNumber), String(describing: state.currentLegIndex+1)))
             .font(.system(size: 10)).foregroundStyle(VIATheme.muted)
         }
         Text(state.countdownLabel).font(.system(size: 12)).foregroundStyle(VIATheme.accent).padding(
@@ -225,12 +225,12 @@ struct JourneyHero: View {
         HStack {
           Text(
             state.phase == .beforeDeparture
-              ? "前往车站需要 \(journey.travelToStationMinutes) 分钟" : delayText(event)
+              ? L10n.text("前往车站需要 %@ 分钟", String(describing: journey.travelToStationMinutes)) : delayText(event)
           )
           .foregroundStyle(VIATheme.amber)
           Spacer()
           if state.phase != .beforeDeparture {
-            Text("计划 \(Time.format(event?.scheduledDate,zone:zone))").foregroundStyle(
+            Text(L10n.text("计划 %@", String(describing: Time.format(event?.scheduledDate,zone:zone)))).foregroundStyle(
               VIATheme.muted)
           }
         }.font(.system(size: 12))
@@ -250,8 +250,8 @@ struct JourneyHero: View {
         HStack {
           Text(
             state.phase == .beforeDeparture
-              ? "\(Time.format(journey.plannedLeaveAt,zone:zone)) 出门"
-              : "\(state.targetIsEstimate ? "预计" : "计划") \(Time.format(state.targetDate,zone:zone)) \(riding ? "到达" : "发车")"
+              ? L10n.text("%@ 出门", String(describing: Time.format(journey.plannedLeaveAt,zone:zone)))
+              : "\(L10n.eventTitle(estimated: state.targetIsEstimate, arrival: riding)) \(Time.format(state.targetDate,zone:zone))"
           )
           Spacer()
           Image(systemName: "arrow.up.right")
@@ -262,10 +262,10 @@ struct JourneyHero: View {
   }
   private func delayText(_ event: EventTime?) -> String {
     guard let s = event?.scheduledDate, let e = event?.estimatedDate else {
-      return journey.currentLeg?.source == .reference ? "参考时刻" : "按计划"
+      return journey.currentLeg?.source == .reference ? L10n.text("参考时刻") : L10n.text("按计划")
     }
     let minutes = Int(e.timeIntervalSince(s) / 60)
-    return minutes > 0 ? "晚点 \(minutes) 分钟" : minutes < 0 ? "预计提前 \(-minutes) 分钟" : "按计划"
+    return minutes > 0 ? L10n.text("晚点 %@ 分钟", String(describing: minutes)) : minutes < 0 ? L10n.text("预计提前 %@ 分钟", String(describing: -minutes)) : L10n.text("按计划")
   }
 }
 extension View {

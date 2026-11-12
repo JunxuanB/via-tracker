@@ -19,11 +19,11 @@ struct InstallationIdentity: Codable, Sendable {
       return try JSONDecoder().decode(Self.self, from: data)
     }
     guard status == errSecItemNotFound else {
-      throw APIClient.Failure.message("无法读取本机凭证，请解锁设备后重试。")
+      throw APIClient.Failure.message(L10n.text("无法读取本机凭证，请解锁设备后重试。"))
     }
     var bytes = [UInt8](repeating: 0, count: 32)
     guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else {
-      throw APIClient.Failure.message("无法创建本机凭证。")
+      throw APIClient.Failure.message(L10n.text("无法创建本机凭证。"))
     }
     let value = Self(
       id: UUID().uuidString, credential: bytes.map { String(format: "%02x", $0) }.joined())
@@ -33,7 +33,7 @@ struct InstallationIdentity: Codable, Sendable {
     insert[kSecValueData as String] = try JSONEncoder().encode(value)
     insert[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
     guard SecItemAdd(insert as CFDictionary, nil) == errSecSuccess else {
-      throw APIClient.Failure.message("无法保存本机凭证。")
+      throw APIClient.Failure.message(L10n.text("无法保存本机凭证。"))
     }
     return value
   }
@@ -67,7 +67,7 @@ actor APIClient {
     var errorDescription: String? {
       switch self {
       case .http(let status, let code):
-        status == 409 ? "数据正在同步，请重试。" : "暂时无法更新（\(status) · \(code)）"
+        status == 409 ? L10n.text("数据正在同步，请重试。") : L10n.text("暂时无法更新（%@ · %@）", String(describing: status), String(describing: code))
       case .message(let message): message
       }
     }
@@ -94,7 +94,7 @@ actor APIClient {
     if method != "GET", let writeRetryAt, Date() < writeRetryAt {
       throw Failure.http(429, "rate_limited")
     }
-    guard let url = URL(string: path, relativeTo: baseURL) else { throw Failure.message("服务地址无效") }
+    guard let url = URL(string: path, relativeTo: baseURL) else { throw Failure.message(L10n.text("服务地址无效")) }
     // ETag and the persisted snapshot are managed here; avoid a second cache
     // returning an older body or hiding the server's conditional response.
     var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
@@ -113,7 +113,7 @@ actor APIClient {
       request.setValue(etag, forHTTPHeaderField: "If-None-Match")
     }
     let (data, response) = try await URLSession.shared.data(for: request)
-    guard let http = response as? HTTPURLResponse else { throw Failure.message("服务响应无效") }
+    guard let http = response as? HTTPURLResponse else { throw Failure.message(L10n.text("服务响应无效")) }
     guard (200..<300).contains(http.statusCode) || http.statusCode == 304 else {
       let error = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
       let code = (error?["error"] as? [String: Any])?["code"] as? String ?? "unknown"
@@ -131,10 +131,9 @@ actor APIClient {
     let (data, response) = try await request("/v1/trains")
     if response.statusCode == 304 { return nil }
     let envelope = try JSONDecoder().decode(TrainEnvelope.self, from: data)
-    guard envelope.schemaVersion == 1 else { throw Failure.message("服务版本已更新，请更新 App。") }
-    guard !envelope.trains.isEmpty || envelope.sourceStatus != "healthy" else {
-      throw Failure.message("列车数据暂时为空，保留最近有效数据。")
-    }
+    guard envelope.schemaVersion == 1 else { throw Failure.message(L10n.text("服务版本已更新，请更新 App。")) }
+    // A healthy empty list is a valid off-hours response, including on a fresh
+    // backend with no retained timetable. Let the UI show its empty state.
     etag = response.value(forHTTPHeaderField: "ETag")
     // Persist the already validated response without encoding the whole feed on the UI actor.
     return (envelope, data)
@@ -155,6 +154,8 @@ actor APIClient {
     registered = true
   }
   func sync(_ body: SubscriptionRequest) async throws -> SubscriptionResponse {
+    var body = body
+    body.journey.notificationLanguage = L10n.language
     let (data, _) = try await request(
       "/v1/subscriptions", method: "POST", body: JSONEncoder().encode(body), authenticated: true)
     return try JSONDecoder().decode(SubscriptionResponse.self, from: data)
@@ -196,7 +197,7 @@ actor APIClient {
     struct Health: Decodable { var environment: String?; var remotePush: Bool? }
     let health = try JSONDecoder().decode(Health.self, from: data)
     guard health.environment == "test", health.remotePush == true else {
-      throw Failure.message("这个地址不是公网测试环境。")
+      throw Failure.message(L10n.text("这个地址不是公网测试环境。"))
     }
   }
   func suspend(journeyIDs: [String], publicTest: Bool, remotePush: Bool, environment: String) async {

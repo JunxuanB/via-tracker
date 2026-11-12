@@ -9,7 +9,7 @@ import UserNotifications
 
 enum AppEnvironment: String, CaseIterable, Sendable {
   case production, test
-  var title: String { self == .production ? "正式环境" : "公网测试环境" }
+  var title: String { self == .production ? L10n.text("正式环境") : L10n.text("公网测试环境") }
 }
 struct AppConfiguration: Equatable, Sendable {
   var environment: AppEnvironment
@@ -98,7 +98,7 @@ struct AppConfiguration: Equatable, Sendable {
       publish()
     }
   }
-  var notificationStatus = "未检查"
+  var notificationStatus = L10n.text("未检查")
   var diagnostics: String?
   var qaScenario: String? {
     #if DEBUG
@@ -121,6 +121,7 @@ struct AppConfiguration: Equatable, Sendable {
       case "crossday": "23:50"
       default: "17:24"
       }
+    if scenario == "upcoming" { return Time.parse("2026-11-03T12:55:00-05:00") }
     if scenario == "timezone" { return Time.parse("2026-11-07T04:00:00-08:00") }
     return Time.parse("2026-11-06T\(time):00-05:00")
   }
@@ -222,10 +223,10 @@ struct AppConfiguration: Equatable, Sendable {
     }
   }
   var sourceMessage: String? {
-    if isOffline { return "当前离线，显示上次保存的信息" }
+    if isOffline { return L10n.text("当前离线，显示上次保存的信息") }
     if let errorMessage { return errorMessage }
-    if let feed, feed.sourceStatus != "healthy" { return "暂时无法刷新，已保留上次的信息" }
-    if let recoveredAt, Date().timeIntervalSince(recoveredAt) < 15 { return "连接已恢复 · 已获取最新数据" }
+    if let feed, feed.sourceStatus != "healthy" { return L10n.text("暂时无法刷新，已保留上次的信息") }
+    if let recoveredAt, Date().timeIntervalSince(recoveredAt) < 15 { return L10n.text("连接已恢复 · 已获取最新数据") }
     return nil
   }
   nonisolated static func openStorage(configuration selected: AppConfiguration = .selected) throws -> ModelContainer {
@@ -376,7 +377,7 @@ struct AppConfiguration: Equatable, Sendable {
       context.rollback()
       if let saved = try? context.fetch(FetchDescriptor<JourneyRecord>()) { records = saved }
       reloadJourneys()
-      storageError = "本地保存失败：\(error.localizedDescription)"
+      storageError = L10n.text("本地保存失败：%@", String(describing: error.localizedDescription))
       return false
     }
   }
@@ -413,7 +414,7 @@ struct AppConfiguration: Equatable, Sendable {
       context.rollback()
       if let saved = try? context.fetch(FetchDescriptor<JourneyRecord>()) { records = saved }
       reloadJourneys()
-      storageError = "本地保存失败：\(error.localizedDescription)"
+      storageError = L10n.text("本地保存失败：%@", String(describing: error.localizedDescription))
       return false
     }
   }
@@ -438,7 +439,7 @@ struct AppConfiguration: Equatable, Sendable {
       context.rollback()
       if let saved = try? context.fetch(FetchDescriptor<JourneyRecord>()) { records = saved }
       reloadJourneys()
-      storageError = "本地删除失败：\(error.localizedDescription)"
+      storageError = L10n.text("本地删除失败：%@", String(describing: error.localizedDescription))
       return false
     }
   }
@@ -484,7 +485,7 @@ struct AppConfiguration: Equatable, Sendable {
       lastPublished = snapshot
       WidgetCenter.shared.reloadTimelines(ofKind: "CurrentJourney")
     } catch {
-      diagnostics = "小组件摘要尚未保存，将在下次刷新时重试。"
+      diagnostics = L10n.text("小组件摘要尚未保存，将在下次刷新时重试。")
     }
   }
   func foreground(_ active: Bool) {
@@ -568,7 +569,7 @@ struct AppConfiguration: Equatable, Sendable {
       }
     } catch {
       guard !Task.isCancelled else { return }
-      errorMessage = "暂时无法更新 · 保留最近有效数据"
+      errorMessage = L10n.text("暂时无法更新 · 保留最近有效数据")
       diagnostics = error.localizedDescription
     }
   }
@@ -588,7 +589,7 @@ struct AppConfiguration: Equatable, Sendable {
         syncError = nil
         guard persist() else { return }
       } catch {
-        if !Task.isCancelled { syncError = "行程已保存在本机，联网后会继续更新。" }
+        if !Task.isCancelled { syncError = L10n.text("行程已保存在本机，联网后会继续更新。") }
         persist()
         return
       }
@@ -676,7 +677,7 @@ struct AppConfiguration: Equatable, Sendable {
           syncRequested = true
           continue
         }
-        throw APIClient.Failure.message("正在合并订阅版本，将自动重试。")
+        throw APIClient.Failure.message(L10n.text("正在合并订阅版本，将自动重试。"))
       }
       guard let current = records.first(where: { $0.id == id }),
         current.revision == revision, let local = current.journey else { continue }
@@ -703,21 +704,21 @@ struct AppConfiguration: Equatable, Sendable {
       let allowed = try await UNUserNotificationCenter.current().requestAuthorization(options: [
         .alert, .sound, .badge,
       ])
-      notificationStatus = allowed ? "已允许" : "未允许"
+      notificationStatus = allowed ? L10n.text("已允许") : L10n.text("未允许")
       if allowed && supportsRemotePush {
         UIApplication.shared.registerForRemoteNotifications()
       } else {
         await registerPushToken(nil)
       }
-    } catch { notificationStatus = "无法请求通知权限" }
+    } catch { notificationStatus = L10n.text("无法请求通知权限") }
   }
   func checkNotifications() async {
     let settings = await UNUserNotificationCenter.current().notificationSettings()
     notificationStatus =
       switch settings.authorizationStatus {
-      case .authorized, .provisional, .ephemeral: "已允许"
-      case .denied: "未允许"
-      default: "尚未请求"
+      case .authorized, .provisional, .ephemeral: L10n.text("已允许")
+      case .denied: L10n.text("未允许")
+      default: L10n.text("尚未请求")
       }
     if settings.authorizationStatus == .denied,
       UserDefaults.standard.string(forKey: configuration.defaultsKey("ordinary-push-token")) != nil

@@ -10,8 +10,13 @@ xcuserdata/
 .env*
 !.env.example
 build/
+__pycache__/
+*.pyc
 *.ipa
 *.xcarchive
 *.p8
 *.p12
 *.mobileprovision
+# Locally generated previews contain exported SF Symbols; do not redistribute.
+design/assets/symbols/
+design/index.html

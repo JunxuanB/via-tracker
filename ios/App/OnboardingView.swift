@@ -1,3 +1,4 @@
+import TrackerCore
 import SwiftUI
 
 // UserDefaults belongs to the app installation, rather than either data environment.
@@ -23,12 +24,12 @@ enum InstallationOnboarding {
 struct ProductDeclaration: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
-      declaration("独立开发 · 非官方产品", symbol: "info.circle", text:
-        "本产品不是由 VIA Canada（VIA Rail Canada）开发。我们调用 VIA Canada 的官方公开 API 获取信息。")
-      declaration("开放源码", symbol: "chevron.left.forwardslash.chevron.right", text:
-        "本程序是开源的，现阶段免费。未来若使用人数增加，可能会收取少量费用，用于服务器运行、服务扩容和代码维护。如果你不希望付费，欢迎使用开源版自行部署。")
-      declaration("致 VIA 代表", symbol: "envelope", text:
-        "如果你是 VIA 代表，并不希望该程序公开，请通过下方项目页面与我们联系。")
+      declaration(L10n.text("独立开发 · 非官方产品"), symbol: "info.circle", text:
+        L10n.text("本产品不是由 VIA Canada（VIA Rail Canada）开发。我们调用 VIA Canada 的官方公开 API 获取信息。"))
+      declaration(L10n.text("开放源码"), symbol: "chevron.left.forwardslash.chevron.right", text:
+        L10n.text("本程序是开源的，现阶段免费。未来若使用人数增加，可能会收取少量费用，用于服务器运行、服务扩容和代码维护。如果你不希望付费，欢迎使用开源版自行部署。"))
+      declaration(L10n.text("致 VIA 代表"), symbol: "envelope", text:
+        L10n.text("如果你是 VIA 代表，并不希望该程序公开，请通过下方项目页面与我们联系。"))
       ViewThatFits(in: .horizontal) {
         HStack(spacing: 24) { projectLinks }
         VStack(alignment: .leading, spacing: 4) { projectLinks }
@@ -37,8 +38,8 @@ struct ProductDeclaration: View {
   }
   private var projectLinks: some View {
     Group {
-      Link("查看开源项目 ↗", destination: URL(string: "https://github.com/JunxuanB/via-tracker")!)
-      Link("联系我们 ↗", destination: URL(string: "https://github.com/JunxuanB/via-tracker/issues")!)
+      Link(L10n.text("查看开源项目 ↗"), destination: URL(string: "https://github.com/JunxuanB/via-tracker")!)
+      Link(L10n.text("联系我们 ↗"), destination: URL(string: "https://junxuanb.com/#contact")!)
     }.font(.subheadline.weight(.medium)).frame(minHeight: 44)
   }
   private func declaration(_ title: String, symbol: String, text: String) -> some View {
@@ -67,14 +68,14 @@ struct OnboardingView: View {
             Text("TRAIN TRACKER").font(.caption.weight(.semibold)).tracking(2)
             Spacer()
             Text("\(step + 1) / 2").font(.caption.monospacedDigit())
-              .accessibilityLabel("第 \(step + 1) 步，共两步")
+              .accessibilityLabel(L10n.text("第 %@ 步，共两步", String(describing: step + 1)))
           }.foregroundStyle(VIATheme.muted).id("onboarding-top")
           hero
           VStack(alignment: .leading, spacing: 10) {
-            Text(step == 0 ? "欢迎搭乘\nTrain Tracker" : "让行程提醒\n及时抵达")
+            Text(step == 0 ? L10n.text("欢迎搭乘\\nTrain Tracker") : L10n.text("让行程提醒\\n及时抵达"))
               .font(.largeTitle.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
               .accessibilityAddTraits(.isHeader)
-            Text(step == 0 ? "出发之前，先了解我们。" : "由你决定如何接收提醒，稍后也能在设置中修改。")
+            Text(step == 0 ? L10n.text("出发之前，先了解我们。") : L10n.text("由你决定如何接收提醒，稍后也能在设置中修改。"))
               .font(.subheadline).foregroundStyle(VIATheme.muted)
           }
           Group {
@@ -85,7 +86,7 @@ struct OnboardingView: View {
             }
           }.id(step).transition(.opacity.combined(with: .offset(x: reduceMotion ? 0 : 20)))
           VStack(spacing: 8) {
-            Button(step == 0 ? "我已了解，继续" : "开始使用") {
+            Button(step == 0 ? L10n.text("我已了解，继续") : L10n.text("开始使用")) {
               if step == 0 {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { step = 1 }
               } else {
@@ -95,9 +96,9 @@ struct OnboardingView: View {
               .accessibilityIdentifier(step == 0 ? "onboarding-next" : "onboarding-finish")
               .disabled(requesting)
             if step == 1 {
-              Text("权限可选，不开启也能查看和保存行程。")
+              Text(L10n.text("权限可选，不开启也能查看和保存行程。"))
                 .font(.caption).foregroundStyle(VIATheme.muted).multilineTextAlignment(.center)
-              Button("返回声明") {
+              Button(L10n.text("返回声明")) {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { step = 0 }
               }.font(.subheadline).frame(minHeight: 44).disabled(requesting)
             }
@@ -135,16 +136,16 @@ struct OnboardingView: View {
   private var permissions: some View {
     VStack(spacing: 16) {
       VIACard(spacing: 12) {
-        Label("行程通知", systemImage: "bell.badge").font(.headline)
-        Text("接收出门、发车、换乘和到达提醒。").font(.subheadline).foregroundStyle(VIATheme.muted)
-        Text(checkedPermissions ? store.notificationStatus : "正在检查…").font(.caption)
+        Label(L10n.text("行程通知"), systemImage: "bell.badge").font(.headline)
+        Text(L10n.text("接收出门、发车、换乘和到达提醒。")).font(.subheadline).foregroundStyle(VIATheme.muted)
+        Text(checkedPermissions ? store.notificationStatus : L10n.text("正在检查…")).font(.caption)
           .foregroundStyle(VIATheme.accent)
-        Button(requesting ? "正在请求…" : store.notificationStatus == "尚未请求" ? "允许通知" : "管理通知权限") {
+        Button(requesting ? L10n.text("正在请求…") : store.notificationStatus == L10n.text("尚未请求") ? L10n.text("允许通知") : L10n.text("管理通知权限")) {
           Task {
             requesting = true
             defer { requesting = false }
             await store.checkNotifications()
-            if store.notificationStatus == "尚未请求" {
+            if store.notificationStatus == L10n.text("尚未请求") {
               await store.enableNotifications()
             } else {
               openSettings()
@@ -154,14 +155,14 @@ struct OnboardingView: View {
           .accessibilityIdentifier("onboarding-notifications")
       }
       VIACard(spacing: 12) {
-        Label("实时活动", systemImage: "antenna.radiowaves.left.and.right").font(.headline)
-        Text("在锁屏和支持的设备灵动岛上查看倒计时与行程进度。添加行程后，可按需开启实时活动。")
+        Label(L10n.text("实时活动"), systemImage: "antenna.radiowaves.left.and.right").font(.headline)
+        Text(L10n.text("在锁屏和支持的设备灵动岛上查看倒计时与行程进度。添加行程后，可按需开启实时活动。"))
           .font(.subheadline).foregroundStyle(VIATheme.muted)
-        Text(!checkedPermissions ? "正在检查…" : store.activities.enabled ? "系统已允许" : "系统未允许")
+        Text(!checkedPermissions ? L10n.text("正在检查…") : store.activities.enabled ? L10n.text("系统已允许") : L10n.text("系统未允许"))
           .font(.caption).foregroundStyle(VIATheme.accent)
-        Text("实时活动由系统管理；可在系统设置中管理实时活动及频繁更新权限。")
+        Text(L10n.text("实时活动由系统管理；可在系统设置中管理实时活动及频繁更新权限。"))
           .font(.caption).foregroundStyle(VIATheme.muted)
-        Button("管理实时活动", action: openSettings).buttonStyle(SecondaryButtonStyle())
+        Button(L10n.text("管理实时活动"), action: openSettings).buttonStyle(SecondaryButtonStyle())
       }
     }
   }

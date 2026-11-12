@@ -31,6 +31,8 @@ export function validateActivity(value: unknown): ActivitySession | undefined {
 }
 export function validateJourney(value: unknown): Journey {
   const j = obj(value);
+  if (j.notificationLanguage !== undefined && j.notificationLanguage !== "en" && j.notificationLanguage !== "zh-Hans")
+    throw new APIError(400, "invalid_notification_language");
   if (!Array.isArray(j.legs) || !j.legs.length || j.legs.length > 16)
     throw new APIError(400, "invalid_legs");
   const phases = [
@@ -175,6 +177,7 @@ export function validateJourney(value: unknown): Journey {
   const minutes = int(j.travelToStationMinutes, 0, 1440);
   if (minutes % 15) throw new APIError(400, "invalid_travel_minutes");
   return {
+    ...(j.notificationLanguage === undefined ? {} : { notificationLanguage: j.notificationLanguage as "en" | "zh-Hans" }),
     id: str(j.id),
     title: typeof j.title === "string" ? j.title.slice(0, 200) : "",
     createdAt: int(j.createdAt, 0, 4e10),

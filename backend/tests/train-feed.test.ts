@@ -12,7 +12,7 @@ test("daily documents bound refresh writes, migrate losslessly, and fence obsole
   try {
     const db = await runtime.getD1Database("DB");
     const at = "2026-10-31T02:00:00Z";
-    const trains = normalize(JSON.parse(readFileSync(new URL("../../contracts/fixtures/via-observed.json", import.meta.url), "utf8")), at, 1);
+    const trains = normalize(JSON.parse(readFileSync(new URL("../../contracts/fixtures/via-synthetic.json", import.meta.url), "utf8")), at, 1);
     // Apply the old schema and seed it before migration to exercise existing installations.
     const initial = readFileSync(new URL("../migrations/0001_initial.sql", import.meta.url), "utf8");
     for (const sql of initial.split(";").map(s => s.trim()).filter(Boolean)) await db.prepare(sql).run();

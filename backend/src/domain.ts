@@ -48,6 +48,7 @@ export interface TrainLeg {
   snapshot: TrainSnapshot;
 }
 export interface Journey {
+  notificationLanguage?: "en" | "zh-Hans";
   id: string;
   title: string;
   createdAt: number;

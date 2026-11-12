@@ -4,12 +4,12 @@ public enum Phase: String, Codable, CaseIterable, Sendable {
   case beforeDeparture, onTheWay, waiting, riding, transferring, completed
   public var title: String {
     switch self {
-    case .beforeDeparture: "出发前"
-    case .onTheWay: "前往中"
-    case .waiting: "候车中"
-    case .riding: "行进中"
-    case .transferring: "换乘中"
-    case .completed: "已完成"
+    case .beforeDeparture: L10n.text("出发前")
+    case .onTheWay: L10n.text("前往中")
+    case .waiting: L10n.text("候车中")
+    case .riding: L10n.text("行进中")
+    case .transferring: L10n.text("换乘中")
+    case .completed: L10n.text("已完成")
     }
   }
   public var symbol: String {
@@ -158,6 +158,7 @@ public struct TrainLeg: Codable, Hashable, Identifiable, Sendable {
   }
 }
 public struct Journey: Codable, Hashable, Identifiable, Sendable {
+  public var notificationLanguage: String?
   public var id: String = UUID().uuidString
   public var title: String = ""
   public var createdAt: Double = Date().timeIntervalSince1970.rounded(.down)
@@ -247,7 +248,7 @@ public enum Time {
     return cache.iso.string(from: date)
   }
   public static func formatted(_ date: Date, zone: String, pattern: String,
-    locale: String = "zh_Hans_CN") -> String {
+    locale: String = Locale.current.identifier) -> String {
     cache.lock.lock()
     defer { cache.lock.unlock() }
     let key = "\(locale)|\(zone)|\(pattern)"
@@ -267,7 +268,7 @@ public enum Time {
     _ date: Date?, zone: String = "America/Toronto", date includeDate: Bool = false
   ) -> String {
     guard let date else { return "—" }
-    return formatted(date, zone: zone, pattern: includeDate ? "M月d日 HH:mm" : "HH:mm")
+    return formatted(date, zone: zone, pattern: includeDate ? L10n.text("M月d日 HH:mm") : "HH:mm")
   }
   public static func serviceDate(_ date: Date, zone: String = "America/Toronto") -> String {
     formatted(date, zone: zone, pattern: "yyyy-MM-dd", locale: "en_US_POSIX")

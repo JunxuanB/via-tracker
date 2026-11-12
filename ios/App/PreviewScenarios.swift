@@ -110,7 +110,7 @@
         store.isOffline = true
         store.errorMessage = nil
       }
-      if scenario == "server-error" { store.errorMessage = "暂时无法更新 · 保留最近有效数据" }
+      if scenario == "server-error" { store.errorMessage = L10n.text("暂时无法更新 · 保留最近有效数据") }
       if scenario == "recovered" { store.recoveredAt = Date() }
       if scenario == "pending-update" {
         j.legs[0].snapshot.calls[2].arrival?.estimated = "2026-11-06T17:20:00-05:00"
@@ -132,7 +132,7 @@
                 arrival: EventTime(scheduled: "2026-11-06T21:12:00-05:00")),
             ], sourceFetchedAt: j.legs[0].snapshot.sourceFetchedAt, version: 1))
       }
-      if !["home", "upcoming"].contains(scenario) { store.selectedJourneyID = j.id }
+      if !["home", "upcoming", "settings"].contains(scenario) { store.selectedJourneyID = j.id }
     }
     static let raw = #"""
       {
