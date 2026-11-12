@@ -6,11 +6,13 @@ import {
   project,
   reconcile,
   shouldPush,
+  stations,
+  trackingStart,
   type Journey,
   type TrainSnapshot,
   type ActivityState,
 } from "./domain.ts";
-import { activityPayload, sendAPNs } from "./apns.ts";
+import { activityPayload, activityStartPayload, sendAPNs } from "./apns.ts";
 import type { ActivitySession } from "./validation.ts";
 export interface SourceState {
   version: number;
@@ -32,6 +34,9 @@ export interface SubscriptionRow {
   updated_at: number;
   push_token?: string;
   environment?: string;
+  auto_start?: string | null;
+  auto_start_sent_for?: number;
+  activity_start_token?: string | null;
 }
 export async function allTrains(env: Env): Promise<TrainSnapshot[]> {
   const { results } = await env.DB.prepare(
@@ -39,6 +44,22 @@ export async function allTrains(env: Env): Promise<TrainSnapshot[]> {
   ).all<{ snapshots: string }>();
   return results.flatMap((r) => Object.values(JSON.parse(r.snapshots) as Record<string, TrainSnapshot>))
     .sort((a, b) => a.trainNumber.localeCompare(b.trainNumber) || a.originServiceDate.localeCompare(b.originServiceDate));
+}
+/** Snapshots already stored for the service dates named in an upstream response. */
+async function storedTrains(env: Env, raw: unknown): Promise<Map<string, TrainSnapshot>> {
+  const dates = [...new Set(Object.values(raw as Record<string, unknown>).flatMap((value) => {
+    const instance = (value as { instance?: unknown } | null)?.instance;
+    return typeof instance === "string" && /^\d{4}-\d{2}-\d{2}$/.test(instance) ? [instance] : [];
+  }))].slice(0, 30);
+  const stored = new Map<string, TrainSnapshot>();
+  if (!dates.length) return stored;
+  const { results } = await env.DB.prepare(
+    `SELECT snapshots FROM train_feeds WHERE service_date IN(${dates.map(() => "?").join(",")})`,
+  ).bind(...dates).all<{ snapshots: string }>();
+  for (const row of results)
+    for (const train of Object.values(JSON.parse(row.snapshots) as Record<string, TrainSnapshot>))
+      stored.set(train.id, train);
+  return stored;
 }
 export async function refresh(env: Env): Promise<void> {
   const now = Date.now(),
@@ -57,11 +78,16 @@ export async function refresh(env: Env): Promise<void> {
     if (!response.ok) throw new Error("source_http_failure");
     const fetchedAt = new Date().toISOString(),
       version = Date.now();
-    const normalized = normalize(
-      await boundedJSON(response, 8_000_000),
-      fetchedAt,
-      version,
-    );
+    const raw = await boundedJSON(response, 8_000_000);
+    if (raw && typeof raw === "object" && !Array.isArray(raw) && !Object.keys(raw).length) {
+      // An empty object is a valid answer when upstream lists no train at all.
+      // Stored schedules stay available and each journey reports its own data age.
+      await env.DB.prepare(
+        "UPDATE source_state SET fetched_at=?,status='healthy' WHERE id=1 AND lease_owner=?",
+      ).bind(fetchedAt, owner).run();
+      return;
+    }
+    const normalized = normalize(raw, fetchedAt, version, { previous: await storedTrains(env, raw) });
     const statements = feedStatements(env.DB, normalized, fetchedAt, "source", owner);
     statements.push(
       env.DB.prepare(
@@ -84,6 +110,43 @@ export async function refresh(env: Env): Promise<void> {
       .run();
   }
 }
+/**
+ * A journey saved days ahead has no Live Activity yet. Once its tracking window
+ * opens, ask the device to start one; the app then registers the new session.
+ */
+async function startActivity(env: Env, row: SubscriptionRow, journey: Journey, owner: string,
+  now: number, observe?: (delivery: DeliveryObservation) => Promise<void>) {
+  if (!row.auto_start || !row.activity_start_token) return;
+  const window = trackingStart(journey);
+  if (now < window || row.auto_start_sent_for === window) return;
+  const state = project(journey, now);
+  if (state.phase === "completed") return;
+  const reserved = await env.DB.prepare(
+    "UPDATE subscriptions SET auto_start_sent_for=? WHERE id=? AND revision=? AND delivery_owner=? AND activity IS NULL",
+  ).bind(window, row.id, row.revision, owner).run();
+  if (!reserved.meta.changes) return;
+  let testSource: string | undefined;
+  try {
+    const value = (JSON.parse(row.auto_start) as { testSource?: unknown }).testSource;
+    if (typeof value === "string") testSource = value;
+  } catch { /* A malformed opt-in still starts a production activity. */ }
+  const first = journey.legs[0], last = journey.legs.at(-1)!;
+  const environment = row.environment ?? "sandbox";
+  const result = await sendAPNs(env, row.activity_start_token, environment,
+    activityStartPayload(state, now, journey.id, {
+      title: "今天的行程已开始追踪",
+      body: `VIA ${first.trainNumber} · ${stations(first).boarding?.name ?? first.boardingCode} → ${stations(last).alighting?.name ?? last.alightingCode}`,
+    }, testSource), true, 10);
+  await observe?.({ installationID: row.installation_id, kind: "activity", environment, ok: result.ok, reason: result.reason });
+  if (result.ok) return;
+  if (result.permanent)
+    await env.DB.prepare("UPDATE installations SET activity_start_token=NULL WHERE id=? AND activity_start_token=?")
+      .bind(row.installation_id, row.activity_start_token).run();
+  // Let the next minute retry a transient failure.
+  await env.DB.prepare("UPDATE subscriptions SET auto_start_sent_for=0 WHERE id=? AND delivery_owner=?")
+    .bind(row.id, owner).run();
+  console.warn(JSON.stringify({ event: "activity_start_failed", reason: result.reason }));
+}
 export interface DeliveryObservation {
   installationID: string;
   kind: "activity" | "notification" | "widget";
@@ -98,7 +161,7 @@ export async function processSubscriptions(env: Env, options?: {
   const now = Math.floor(Date.now() / 1000),
     snapshots = await allTrains(env);
   const { results: rows } = await env.DB.prepare(
-    "SELECT s.*,i.push_token,i.environment FROM subscriptions s JOIN installations i ON i.id=s.installation_id WHERE expires_at>?",
+    "SELECT s.*,i.push_token,i.environment,i.activity_start_token FROM subscriptions s JOIN installations i ON i.id=s.installation_id WHERE expires_at>?",
   )
     .bind(now)
     .all<SubscriptionRow>();
@@ -116,7 +179,7 @@ export async function processSubscriptions(env: Env, options?: {
     try {
       // A previous delivery can update this row without changing its client revision.
       const row = await env.DB.prepare(
-        "SELECT s.*,i.push_token,i.environment FROM subscriptions s JOIN installations i ON i.id=s.installation_id WHERE s.id=? AND s.delivery_owner=?",
+        "SELECT s.*,i.push_token,i.environment,i.activity_start_token FROM subscriptions s JOIN installations i ON i.id=s.installation_id WHERE s.id=? AND s.delivery_owner=?",
       ).bind(candidate.id, deliveryOwner).first<SubscriptionRow>();
       if (!row) continue;
       const now = Math.floor(Date.now() / 1000);
@@ -128,7 +191,10 @@ export async function processSubscriptions(env: Env, options?: {
         .run();
       if (!updated.meta.changes || j.trackingEnded) continue;
       reminder = { row, journey: j, now };
-      if (!row.activity || j.trackingEnded) continue;
+      if (!row.activity) {
+        await startActivity(env, row, j, deliveryOwner, now, options?.onDelivery);
+        continue;
+      }
       const activity = JSON.parse(row.activity) as ActivitySession;
       if (now >= activity.startedAt + 28800) {
         await env.DB.prepare(

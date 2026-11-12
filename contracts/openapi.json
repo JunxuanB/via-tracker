@@ -991,6 +991,70 @@
           }
         }
       }
+    },
+    "/v1/activity-start-token": {
+      "put": {
+        "summary": "Register the app-wide ActivityKit push-to-start token used to start a Live Activity when a journey's tracking window opens",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "environment"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{32,512}$",
+                    "description": "Even-length hexadecimal ActivityKit push-to-start token."
+                  },
+                  "environment": {
+                    "type": "string",
+                    "enum": [
+                      "sandbox",
+                      "production"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registered for the authenticated installation and matching APNs environment"
+          },
+          "400": {
+            "description": "Invalid token or environment"
+          },
+          "401": {
+            "description": "Invalid installation credential"
+          },
+          "409": {
+            "description": "APNs environment does not match the installation"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unregister remote Live Activity starts",
+        "responses": {
+          "200": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Invalid installation credential"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1344,6 +1408,19 @@
           },
           "activity": {
             "$ref": "#/components/schemas/ActivitySession"
+          },
+          "autoStart": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Opt in to a remote Live Activity start five hours before the planned time to leave. Ignored while an activity session is supplied.",
+            "properties": {
+              "testSource": {
+                "type": "string",
+                "maxLength": 300
+              }
+            }
           }
         },
         "required": [

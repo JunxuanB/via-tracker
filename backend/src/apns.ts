@@ -106,3 +106,23 @@ export function activityPayload(
     },
   };
 }
+/** Push-to-start: ActivityKit decodes `attributes` into JourneyActivityAttributes. */
+export function activityStartPayload(
+  state: ActivityState,
+  timestamp: number,
+  journeyID: string,
+  alert: { title: string; body: string },
+  testSource?: string,
+) {
+  return {
+    aps: {
+      timestamp,
+      event: "start",
+      "content-state": state,
+      "stale-date": Math.trunc(state.validUntilEpoch),
+      "attributes-type": "JourneyActivityAttributes",
+      attributes: { journeyID, ...(testSource ? { testSource } : {}) },
+      alert,
+    },
+  };
+}

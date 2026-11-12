@@ -83,6 +83,10 @@ export interface ActivityState {
 }
 export const epoch = (s?: string) =>
   s && Number.isFinite(Date.parse(s)) ? Date.parse(s) / 1000 : undefined;
+/** Countdowns and the Live Activity begin this long before the planned time to leave home. */
+export const TRACKING_LEAD_SECONDS = 5 * 3600;
+export const trackingStart = (journey: Journey) =>
+  journey.legs[0].planningDeparture - journey.travelToStationMinutes * 60 - TRACKING_LEAD_SECONDS;
 export function stations(leg: TrainLeg) {
   return {
     boarding: leg.snapshot.calls.find(

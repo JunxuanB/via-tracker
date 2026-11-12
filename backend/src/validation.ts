@@ -96,6 +96,7 @@ export function validateJourney(value: unknown): Journey {
         },
         fetchedAt,
         int(s.version, 0, Number.MAX_SAFE_INTEGER),
+        { repair: false },
       )[0];
     } catch {
       throw new APIError(400, "invalid_snapshot");

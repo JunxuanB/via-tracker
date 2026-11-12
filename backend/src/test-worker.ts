@@ -121,7 +121,7 @@ async function handle(request: Request, env: Cloudflare.TestEnv, ctx: ExecutionC
     const owner = await authenticate(request, env);
     if (request.method === 'DELETE') {
       await env.DB.batch([env.DB.prepare('DELETE FROM subscriptions WHERE installation_id=?').bind(owner),
-        env.DB.prepare('UPDATE installations SET push_token=NULL WHERE id=?').bind(owner)]);
+        env.DB.prepare('UPDATE installations SET push_token=NULL,activity_start_token=NULL WHERE id=?').bind(owner)]);
       return new Response(null, { status: 204 });
     }
     return json({ code: await codeFor(owner) });

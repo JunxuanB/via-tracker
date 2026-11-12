@@ -26,13 +26,89 @@ function event(v: unknown): EventTime | undefined {
       : {}),
   };
 }
+export interface NormalizeOptions {
+  /** Last stored snapshots by ID. Events that vanish from a later poll are kept. */
+  previous?: ReadonlyMap<string, TrainSnapshot>;
+  /** Client-supplied snapshots are validated as-is; only the upstream feed is repaired. */
+  repair?: boolean;
+}
+type Call = TrainSnapshot["calls"][number];
+const later = (a?: string, b?: string) =>
+  a && b ? (epoch(a)! >= epoch(b)! ? a : b) : (a ?? b);
+/**
+ * VIA publishes partial records, typically overnight: a stop may carry only an
+ * arrival, only the station-level time, or no usable time at all. A stop that
+ * cannot be boarded makes the whole train unusable as a schedule reference, so
+ * the feed is repaired in two steps: keep what an earlier poll already knew,
+ * then derive the missing side of a stop from the side that is present.
+ */
+function repairCalls(
+  parsed: (Call & { station?: EventTime })[],
+  rawCodes: (string | undefined)[],
+  previous: TrainSnapshot | undefined,
+): { calls: Call[]; retained: boolean; inferred: boolean } {
+  let retained = false,
+    inferred = false;
+  const known = new Map(previous?.calls.map((c) => [c.index, c]));
+  // Station indices are array positions. Only trust the earlier poll while every
+  // stop still sits where it was; otherwise the route itself has changed.
+  const aligned =
+    !!previous &&
+    rawCodes.every((code, index) => !known.has(index) || !code || known.get(index)!.code === code);
+  const byIndex = new Map(parsed.map((c) => [c.index, c]));
+  if (aligned)
+    for (const old of previous!.calls) {
+      if (old.index >= rawCodes.length) continue;
+      const current = byIndex.get(old.index);
+      if (!current) {
+        // The stop is still listed upstream but lost its name, zone or times.
+        const { reached: _reached, ...rest } = old;
+        byIndex.set(old.index, structuredClone(rest));
+        retained = true;
+        continue;
+      }
+      for (const side of ["arrival", "departure"] as const) {
+        if (current[side] || !old[side]) continue;
+        // Keep the published schedule, but never an estimate older than the live one.
+        const live = current.arrival?.estimated ?? current.departure?.estimated ?? current.station?.estimated;
+        const estimated = later(old[side]!.estimated, live);
+        current[side] = { scheduled: old[side]!.scheduled, ...(estimated ? { estimated } : {}) };
+        retained = true;
+      }
+    }
+  const lastIndex = rawCodes.length - 1;
+  const calls: Call[] = [];
+  for (const { station, ...call } of [...byIndex.values()].sort((a, b) => a.index - b.index)) {
+    const first = call.index === 0,
+      last = call.index === lastIndex;
+    if (!call.arrival && !call.departure && station) {
+      // The station-level time is the arrival, or the departure at the origin.
+      if (!first || last) call.arrival = { ...station };
+      if (!last) call.departure = { ...station };
+      inferred = true;
+    }
+    // A terminus keeps no departure: its absence marks the end of the run.
+    if (!call.departure && call.arrival && !last) {
+      call.departure = { ...call.arrival };
+      inferred = true;
+    }
+    if (!call.arrival && call.departure && !first) {
+      call.arrival = { ...call.departure };
+      inferred = true;
+    }
+    if (call.arrival || call.departure) calls.push(call);
+  }
+  return { calls, retained, inferred };
+}
 export function normalize(
   raw: unknown,
   fetchedAt: string,
   version: number,
+  options: NormalizeOptions = {},
 ): TrainSnapshot[] {
   const root = record(raw);
   if (!root) throw new Error("invalid_source_shape");
+  const repair = options.repair !== false;
   const trains: TrainSnapshot[] = [];
   for (const [rawKey, value] of Object.entries(root)) {
     const r = record(value),
@@ -48,7 +124,7 @@ export function normalize(
       !Array.isArray(r.times)
     )
       continue;
-    const calls = r.times.flatMap((v, index) => {
+    const parsed = r.times.flatMap((v, index) => {
       const s = record(v);
       if (!s || !text(s.code) || !text(s.station) || !text(s.tz)) return [];
       try {
@@ -57,8 +133,9 @@ export function normalize(
         return [];
       }
       const arrival = event(s.arrival),
-        departure = event(s.departure);
-      if (!arrival && !departure) return [];
+        departure = event(s.departure),
+        station = repair ? event(s) : undefined;
+      if (!arrival && !departure && !station) return [];
       return [
         {
           index,
@@ -68,9 +145,15 @@ export function normalize(
           ...(typeof s.eta === "string" ? { reached: s.eta === "ARR" } : {}),
           ...(arrival ? { arrival } : {}),
           ...(departure ? { departure } : {}),
+          ...(station ? { station } : {}),
         },
       ];
     });
+    const id = `${number}:${r.instance}`;
+    const repaired = repair
+      ? repairCalls(parsed, r.times.map((v) => text(record(v)?.code)), options.previous?.get(id))
+      : { calls: parsed as Call[], retained: false, inferred: false };
+    const calls = repaired.calls;
     if (!calls.length) continue;
     const validPosition =
       typeof r.lat === "number" &&
@@ -81,7 +164,7 @@ export function normalize(
       Math.abs(r.lng) <= 180 &&
       !(r.lat === 0 && r.lng === 0);
     trains.push({
-      id: `${number}:${r.instance}`,
+      id,
       trainNumber: number,
       originServiceDate: r.instance,
       rawKey,
@@ -95,6 +178,8 @@ export function normalize(
       qualityFlags: [
         "station_actual_events_unverified",
         ...(calls.length < r.times.length ? ["incomplete_station_events"] : []),
+        ...(repaired.retained ? ["retained_station_events"] : []),
+        ...(repaired.inferred ? ["inferred_station_events"] : []),
         ...(validPosition && epoch(text(r.poll)) === undefined
           ? ["position_time_unknown"]
           : []),
