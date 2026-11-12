@@ -17,7 +17,7 @@
       }
       let phase: Phase =
         switch scenario {
-        case "before", "upcoming": .beforeDeparture
+        case "before", "upcoming", "trip-order": .beforeDeparture
         case "onway": .onTheWay
         case "waiting": .waiting
         case "interchange": .transferring
@@ -115,8 +115,24 @@
       if scenario == "pending-update" {
         j.legs[0].snapshot.calls[2].arrival?.estimated = "2026-11-06T17:20:00-05:00"
       }
+      if scenario == "trip-order" {
+        j.id = "nearer-trip"
+        j.title = "Nearer trip"
+        j.createdAt = 1
+      }
       store.save(j)
-      store.primaryID = j.id
+      if scenario == "trip-order" {
+        var later = j
+        later.id = "later-trip"
+        later.title = "Later trip"
+        later.createdAt = 2
+        for index in later.legs.indices {
+          later.legs[index].originServiceDate = "2026-11-07"
+          later.legs[index].snapshot = try! ReferenceSchedule.migrate(later.legs[index].snapshot, to: "2026-11-07")
+          later.legs[index].planningDeparture = later.legs[index].boarding!.departure!.scheduledDate!.timeIntervalSince1970
+        }
+        store.save(later)
+      }
       store.trains = j.legs.map(\.snapshot)
       if scenario == "add-transfer" {
         store.trains.append(
@@ -132,7 +148,7 @@
                 arrival: EventTime(scheduled: "2026-11-06T21:12:00-05:00")),
             ], sourceFetchedAt: j.legs[0].snapshot.sourceFetchedAt, version: 1))
       }
-      if !["home", "upcoming", "settings"].contains(scenario) { store.selectedJourneyID = j.id }
+      if !["home", "upcoming", "settings", "trip-order"].contains(scenario) { store.selectedJourneyID = j.id }
     }
     static let raw = #"""
       {

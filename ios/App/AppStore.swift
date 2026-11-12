@@ -92,12 +92,6 @@ struct AppConfiguration: Equatable, Sendable {
   var storageError: String?
   var recoveredAt: Date?
   var selectedJourneyID: String?
-  var primaryID: String? {
-    didSet {
-      if qaScenario == nil { UserDefaults.standard.set(primaryID, forKey: configuration.defaultsKey("primary-journey")) }
-      publish()
-    }
-  }
   var notificationStatus = L10n.text("未检查")
   var diagnostics: String?
   var qaScenario: String? {
@@ -111,7 +105,7 @@ struct AppConfiguration: Equatable, Sendable {
     guard let scenario = qaScenario else { return nil }
     let time =
       switch scenario {
-      case "before", "upcoming": "12:55"
+      case "before", "upcoming", "trip-order": "12:55"
       case "onway": "13:42"
       case "waiting": "13:55"
       case "interchange": "18:42"
@@ -202,9 +196,9 @@ struct AppConfiguration: Equatable, Sendable {
     return min(qaDate ?? clockNow, journey.legs.last?.alighting?.arrival?.effectiveDate ?? (qaDate ?? clockNow))
   }
   var primaryJourney: Journey? {
-    let active = activeJourneys
-    if let primaryID, let journey = active.first(where: { $0.id == primaryID }) { return journey }
-    return active.first
+    // Current trip follows departure order, regardless of creation order or
+    // which trip most recently started a Live Activity.
+    activeJourneys.first
   }
   private func updateClock() {
     clockNow = Date()
@@ -274,7 +268,6 @@ struct AppConfiguration: Equatable, Sendable {
     apiBaseURL = configuration.baseURL.absoluteString
     api = APIClient(baseURL: configuration.baseURL, identityNamespace: configuration.namespace)
     appearance = UserDefaults.standard.string(forKey: "appearance") ?? "system"
-    primaryID = UserDefaults.standard.string(forKey: configuration.defaultsKey("primary-journey"))
     activities.remotePushEnabled = configuration.remotePush
     activities.testSource = configuration.isTest ? apiBaseURL : nil
     if configuration.remotePush { UserDefaults.standard.set(true, forKey: configuration.defaultsKey("push-token-update-pending")) }
@@ -297,7 +290,6 @@ struct AppConfiguration: Equatable, Sendable {
       if let id = self.activities.journeyID {
         // Started here or by the server: either way the waiting is over.
         if self.autoStartIDs.remove(id) != nil { self.saveAutoStart() }
-        if self.primaryID != id, self.journeys.contains(where: { $0.id == id }) { self.primaryID = id }
       }
       for record in self.records {
         record.revision += 1
@@ -348,9 +340,7 @@ struct AppConfiguration: Equatable, Sendable {
     defer { activatingServices = false }
     await activities.restore()
     if let id = activities.journeyID {
-      if let journey = journeys.first(where: { $0.id == id }), !journey.completed, !journey.trackingEnded {
-        primaryID = id
-      } else {
+      if !journeys.contains(where: { $0.id == id && !$0.completed && !$0.trackingEnded }) {
         await activities.end()
       }
     }
@@ -428,7 +418,6 @@ struct AppConfiguration: Equatable, Sendable {
       records.removeAll { $0.id == journey.id }
       storageError = nil
       reloadJourneys()
-      if primaryID == journey.id { primaryID = nil }
       publish()
       Task {
         if activities.journeyID == journey.id { await activities.end() }
@@ -441,14 +430,6 @@ struct AppConfiguration: Equatable, Sendable {
       reloadJourneys()
       storageError = L10n.text("本地删除失败：%@", String(describing: error.localizedDescription))
       return false
-    }
-  }
-  func setPrimary(_ journey: Journey) {
-    primaryID = journey.id
-    Task {
-      if primaryID == journey.id, activities.journeyID != nil && activities.journeyID != journey.id {
-        await activities.end()
-      }
     }
   }
   func startActivity(_ journey: Journey) async {
@@ -464,7 +445,6 @@ struct AppConfiguration: Equatable, Sendable {
       setAutoStart(j, true)
       return
     }
-    primaryID = j.id
     // ActivityManager.start ends the previous activity before requesting the new one.
     await activities.start(j)
   }

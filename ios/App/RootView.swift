@@ -297,7 +297,7 @@ struct JourneyHome: View {
                 TimelineView(.periodic(from: .now, by: 15)) { context in
                   homeCard(j, now: store.qaDate ?? context.date)
                 }
-              }.buttonStyle(.plain)
+              }.buttonStyle(.plain).accessibilityIdentifier("current-trip-card")
             }
             let others = store.activeJourneys.filter { $0.id != store.primaryJourney?.id }
             if !others.isEmpty {

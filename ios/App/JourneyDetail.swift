@@ -159,9 +159,6 @@ struct JourneyDetail: View {
           if store.isTestMode {
             Button(L10n.text("更正行程状态"), systemImage: "hand.tap") { correcting = true }
           }
-          if let j = journey, !j.completed, !j.trackingEnded {
-            Button(L10n.text("设为主行程"), systemImage: "location.fill") { store.setPrimary(j) }
-          }
           Button(L10n.text("结束追踪"), systemImage: "stop.circle", role: .destructive) { ending = true }
           Button(L10n.text("删除行程"), systemImage: "trash", role: .destructive) { deleting = true }
         } label: {

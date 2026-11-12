@@ -1,6 +1,30 @@
 import XCTest
 
 @MainActor final class JourneyFlowTests: XCTestCase {
+  func testCurrentTripIgnoresCreationOrderAndLegacyPrimarySelection() throws {
+    let app = XCUIApplication()
+    app.launchEnvironment["VIA_QA_SCENARIO"] = "trip-order"
+    app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_CA",
+      "-selected-environment", "production", "-primary-journey", "later-trip"]
+    app.launch()
+    let current = app.buttons["current-trip-card"]
+    XCTAssertTrue(current.waitForExistence(timeout: 30))
+    XCTAssertTrue(current.label.contains("Until you leave"), current.label)
+    XCTAssertFalse(current.label.contains("Tomorrow"))
+    current.tap()
+    app.buttons["Manage trip"].tap()
+    XCTAssertFalse(app.buttons["Set as primary trip"].exists)
+    app.buttons["End tracking"].tap()
+    app.buttons["End tracking"].tap()
+    app.buttons["Trips"].tap()
+    XCTAssertTrue(current.waitForExistence(timeout: 10))
+    XCTAssertTrue(current.label.contains("Tomorrow"), current.label)
+    app.terminate()
+    app.launch()
+    XCTAssertTrue(current.waitForExistence(timeout: 30))
+    XCTAssertTrue(current.label.contains("Until you leave"), "Legacy primary selection must also be ignored after relaunch")
+  }
+
   func testEnglishTripEditor() throws {
     let app = XCUIApplication()
     app.launchEnvironment["VIA_QA_SCENARIO"] = "before"
